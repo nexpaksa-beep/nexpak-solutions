@@ -1572,48 +1572,30 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="../seo-schema-injector.js"></script>
 
 <script>
-function toggleNexpakMenu(event) {
+    <!-- ==========================================================
+     BOTTOM CHECKOUT
+========================================================== -->
 
-    event.preventDefault();
-    event.stopPropagation();
+<div style="
+    text-align:center;
+    margin:50px 20px 60px;
+">
 
-    const dropdown =
-        document.querySelector('.dropdown');
-
-    if (dropdown) {
-        dropdown.classList.toggle('active');
-    }
-}
-
-
-/* Close menu when clicking outside */
-
-document.addEventListener('click', function(event) {
-
-    const dropdown =
-        document.querySelector('.dropdown');
-
-    if (!dropdown) return;
-
-    if (!dropdown.contains(event.target)) {
-        dropdown.classList.remove('active');
-    }
-
-});
-</script>
-        <div style="text-align:center; margin:50px 20px;">
+    <!-- PROCEED TO CHECKOUT -->
 
     <button
         type="button"
         onclick="window.location.href='../checkout.html';"
         style="
+            display:block;
             width:100%;
             max-width:600px;
+            margin:0 auto;
             padding:22px 30px;
             border:none;
             border-radius:15px;
             background:#354c3b;
-            color:white;
+            color:#fff;
             font-size:22px;
             font-weight:800;
             cursor:pointer;
@@ -1623,25 +1605,30 @@ document.addEventListener('click', function(event) {
         🛒 &nbsp; PROCEED TO CHECKOUT
     </button>
 
-        </div>
-        <button
-    type="button"
-    onclick="clearCart()"
-    style="
-        margin-top:15px;
-        padding:14px 25px;
-        border:none;
-        border-radius:10px;
-        background:#b91c1c;
-        color:white;
-        font-size:16px;
-        font-weight:700;
-        cursor:pointer;
-    "
->
-    🗑️ CLEAR CART
-        </button>
+
+    <!-- CLEAR CART -->
+
+    <button
+        type="button"
+        onclick="window.clearCart();"
+        style="
+            display:block;
+            margin:15px auto 0;
+            padding:14px 25px;
+            border:none;
+            border-radius:10px;
+            background:#b91c1c;
+            color:#fff;
+            font-size:16px;
+            font-weight:700;
+            cursor:pointer;
+        "
+    >
+        🗑️ CLEAR CART
+    </button>
+
+</div>
+
+
 </body>
 </html>
-
-
