@@ -106,6 +106,39 @@
             transition: transform 0.3s ease, background-color 0.3s ease;
         }
         .whatsapp-float:hover { transform: scale(1.1); background-color: #20ba5a; }
+
+        .dropdown {
+    position: relative;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 220px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    z-index: 9999;
+    overflow: hidden;
+}
+
+.dropdown-content a {
+    display: block;
+    padding: 13px 16px;
+    color: #111827;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.dropdown-content a:hover {
+    background: #f1f5f9;
+}
+
+.dropdown.active .dropdown-content {
+    display: block;
+}
     </style>
 </head>
 <body>
@@ -1477,10 +1510,36 @@ window.location.href =
     '../checkout.html';
                 
 
-                
+ <script>
+document.addEventListener('DOMContentLoaded', function () {
 
-                
-</script>
+    const menuButton = document.querySelector('.dropdown-btn');
+    const dropdown = document.querySelector('.dropdown');
+
+    if (!menuButton || !dropdown) return;
+
+    menuButton.addEventListener('click', function (event) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        dropdown.classList.toggle('active');
+
+    });
+
+
+    document.addEventListener('click', function (event) {
+
+        if (!dropdown.contains(event.target)) {
+            dropdown.classList.remove('active');
+        }
+
+    });
+
+});
+</script>               
+
+            
 
 <!-- ==========================================================
      NEXPAK CORE SCRIPTS
