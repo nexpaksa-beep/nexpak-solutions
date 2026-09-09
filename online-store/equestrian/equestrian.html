@@ -1118,13 +1118,13 @@ function renderCart() {
   el.innerHTML = cart.map((x, i) => {
     const p = products.find(y => y.id === x.id);
     if (!p) return "";
-    total += inc(p.price) * x.qty;
+    total += p.price * x.qty;
     return `
       <div class="cart-item">
         <img src="${p.image}" alt="">
         <div>
           <h4>${p.name}</h4>
-          <small>${x.variant ? x.variant + " • " : ""}${money(inc(p.price))} each</small>
+          <small>${x.variant ? x.variant + " • " : ""}${money(p.price)} ex VAT each</small>
           <div class="qty">
             <button onclick="changeQty(${i},-1)">−</button>
             <b>${x.qty}</b>
