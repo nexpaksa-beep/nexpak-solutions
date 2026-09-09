@@ -898,4 +898,204 @@ document.addEventListener('DOMContentLoaded', () => {
         clearCart();
 
 
-        // ----------------------------------------------
+                // -------------------------------------------------------------
+        // CLEAR CART
+        // -------------------------------------------------------------
+
+        clearCart();
+
+
+        // -------------------------------------------------------------
+        // CLEAR DELIVERY DATA
+        // -------------------------------------------------------------
+
+        clearDeliveryData();
+
+
+        // -------------------------------------------------------------
+        // UPDATE CART BADGE
+        // -------------------------------------------------------------
+
+        updateCartBadge();
+
+
+        // -------------------------------------------------------------
+        // RETURN TO HOME PAGE
+        // -------------------------------------------------------------
+
+        setTimeout(() => {
+
+            window.location.href = HOME_PAGE;
+
+        }, 500);
+
+    }
+
+
+    // =========================================================================
+    // 20. CLEAR CART
+    // =========================================================================
+
+    function clearCart() {
+
+        const keysToRemove = [
+            'nexpak_cart_count',
+            'nexpak_cart_total',
+            'nexpak_cart_items',
+            'cart_items',
+            'cartItems',
+            'cart',
+            'cart_total',
+            'cartTotal',
+            'cartSubtotal'
+        ];
+
+        keysToRemove.forEach(key => {
+            localStorage.removeItem(key);
+        });
+
+    }
+
+
+    // =========================================================================
+    // 21. CLEAR DELIVERY DATA
+    // =========================================================================
+
+    function clearDeliveryData() {
+
+        localStorage.removeItem('nexpak_delivery_km');
+        localStorage.removeItem('nexpak_delivery_weight');
+        localStorage.removeItem('nexpak_delivery_fee');
+
+    }
+
+
+    // =========================================================================
+    // 22. UPDATE CART BADGE
+    // =========================================================================
+
+    function updateCartBadge() {
+
+        const possibleBadges = [
+            'cart-count',
+            'cartCount',
+            'nexpak-cart-count',
+            'nexpak_cart_count'
+        ];
+
+        possibleBadges.forEach(id => {
+
+            const badge = document.getElementById(id);
+
+            if (badge) {
+                badge.textContent = '0';
+            }
+
+        });
+
+    }
+
+
+    // =========================================================================
+    // 23. COMPLETE CHECKOUT BUTTON
+    // =========================================================================
+    // IMPORTANT:
+    // checkout.js is the ONLY file that handles this button.
+    // payments.js must NOT attach another checkout handler.
+    // =========================================================================
+
+    if (completeCheckoutBtn) {
+
+        completeCheckoutBtn.addEventListener(
+            'click',
+            completeOrder
+        );
+
+    }
+
+
+    // =========================================================================
+    // 24. REFRESH TOTALS AFTER DELIVERY CALCULATION
+    // =========================================================================
+
+    const calculateDeliveryBtn =
+        document.getElementById('btnCalculateDelivery');
+
+    if (calculateDeliveryBtn) {
+
+        calculateDeliveryBtn.addEventListener(
+            'click',
+            () => {
+
+                // Give delivery-calculator.js time to
+                // save the calculated delivery fee.
+
+                setTimeout(() => {
+
+                    updateFinancialSummary();
+
+                }, 50);
+
+            }
+        );
+
+    }
+
+
+    // =========================================================================
+    // 25. INITIALISE CHECKOUT
+    // =========================================================================
+
+    renderCartItems();
+
+    updateFinancialSummary();
+
+    updateWhatsAppPopLink();
+
+
+    // =========================================================================
+    // 26. PUBLIC CHECKOUT API
+    // =========================================================================
+
+    window.NexpakCheckout = {
+
+        getCartItems: () => {
+            return getCartItems();
+        },
+
+        getSubtotal: () => {
+            return cartSubtotal;
+        },
+
+        getDeliveryFee: () => {
+            return getDeliveryFee();
+        },
+
+        getTotals: () => {
+            return calculateTotals();
+        },
+
+        getOrderReference: () => {
+            return generatedOrderRef;
+        },
+
+        updateSummary: () => {
+            updateFinancialSummary();
+        },
+
+        completeOrder: () => {
+            completeOrder();
+        }
+
+    };
+
+
+    // =========================================================================
+    // 27. READY
+    // =========================================================================
+
+    console.log(
+        'Nexpak Checkout Controller loaded successfully.'
+    );
+
+});
