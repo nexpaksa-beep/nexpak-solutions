@@ -790,7 +790,21 @@
             });
         }
     });
-    
+
+        // Global Clear Cart Function (Bypasses DOM selection issues)
+window.clearCart = function() {
+    if (confirm('Are you sure you want to clear your cart?')) {
+        // Completely wipes stored cart memory
+        localStorage.removeItem('nexpak_cart_count');
+        localStorage.removeItem('nexpak_cart_total');
+        localStorage.removeItem('nexpak_cart_weight');
+        localStorage.removeItem('nexpak_cart_items');
+
+        // Reloads the page to instantly reset all UI counters and totals to 0
+        window.location.reload();
+    }
+};
+        
             </script>
     <script src="seo-schema-injector.js"></script>
     <script src="seo-schema.js"></script>
