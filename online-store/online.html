@@ -1278,4 +1278,317 @@ window.clearCart = function () {
            STANDARD CART KEYS
         ------------------------------------------------------ */
 
-    
+            localStorage.removeItem(
+            'cartCount'
+        );
+
+        localStorage.removeItem(
+            'cartSubtotal'
+        );
+
+        localStorage.removeItem(
+            'totalWeight'
+        );
+
+        localStorage.removeItem(
+            'cartItems'
+        );
+
+
+        /* ------------------------------------------------------
+           CHECKOUT / PAYMENT KEYS
+        ------------------------------------------------------ */
+
+        localStorage.removeItem(
+            'deliveryFee'
+        );
+
+        localStorage.removeItem(
+            'grandTotal'
+        );
+
+        localStorage.removeItem(
+            'nexpak_checkout_data'
+        );
+
+
+        /* ------------------------------------------------------
+           RELOAD PAGE
+        ------------------------------------------------------ */
+
+        window.location.reload();
+    }
+};
+
+
+/* ==========================================================
+   FINAL CHECKOUT LINK HANDLER
+========================================================== */
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+        const checkoutLink =
+            document.querySelector(
+                'a[href="../checkout.html"]'
+            );
+
+        if (!checkoutLink) {
+            return;
+        }
+
+
+        checkoutLink.addEventListener(
+            'click',
+            function (event) {
+
+                event.preventDefault();
+
+
+                /* ----------------------------------------------
+                   READ CURRENT CART
+                ---------------------------------------------- */
+
+                const count =
+                    parseInt(
+                        localStorage.getItem(
+                            'nexpak_cart_count'
+                        ) || '0',
+                        10
+                    );
+
+
+                const subtotal =
+                    parseFloat(
+                        localStorage.getItem(
+                            'nexpak_cart_total'
+                        ) || '0'
+                    );
+
+
+                const weight =
+                    parseFloat(
+                        localStorage.getItem(
+                            'nexpak_cart_weight'
+                        ) || '0'
+                    );
+
+
+                let items = [];
+
+                try {
+
+                    items =
+                        JSON.parse(
+                            localStorage.getItem(
+                                'nexpak_cart_items'
+                            ) || '[]'
+                        );
+
+                } catch (error) {
+
+                    console.error(
+                        'Cart data could not be read:',
+                        error
+                    );
+
+                    items = [];
+                }
+
+
+                /* ----------------------------------------------
+                   CHECK EMPTY CART
+                ---------------------------------------------- */
+
+                if (
+                    count <= 0 ||
+                    items.length === 0
+                ) {
+
+                    alert(
+                        'Your cart is empty. Please add a product before proceeding to checkout.'
+                    );
+
+                    return;
+                }
+
+
+                /* ----------------------------------------------
+                   CALCULATE DELIVERY
+                ---------------------------------------------- */
+
+                let deliveryFee = 0;
+
+
+                if (subtotal >= 10000) {
+
+                    deliveryFee = 0;
+
+                } else if (weight <= 5) {
+
+                    deliveryFee = 80;
+
+                } else {
+
+                    deliveryFee =
+                        80 +
+                        ((weight - 5) * 7);
+                }
+
+
+                /* ----------------------------------------------
+                   CALCULATE GRAND TOTAL
+                ---------------------------------------------- */
+
+                const grandTotal =
+                    subtotal + deliveryFee;
+
+
+                /* ----------------------------------------------
+                   CREATE CHECKOUT DATA
+                ---------------------------------------------- */
+
+                const checkoutData = {
+
+                    cartCount:
+                        count,
+
+                    cartItems:
+                        items,
+
+                    subtotal:
+                        Number(
+                            subtotal.toFixed(2)
+                        ),
+
+                    weight:
+                        Number(
+                            weight.toFixed(2)
+                        ),
+
+                    deliveryFee:
+                        Number(
+                            deliveryFee.toFixed(2)
+                        ),
+
+                    grandTotal:
+                        Number(
+                            grandTotal.toFixed(2)
+                        ),
+
+                    currency:
+                        'ZAR',
+
+                    createdAt:
+                        new Date().toISOString()
+                };
+
+
+                /* ----------------------------------------------
+                   SAVE CHECKOUT DATA
+                ---------------------------------------------- */
+
+                localStorage.setItem(
+                    'nexpak_checkout_data',
+                    JSON.stringify(
+                        checkoutData
+                    )
+                );
+
+
+                /* ----------------------------------------------
+                   SAVE PAYMENT COMPATIBILITY VALUES
+                ---------------------------------------------- */
+
+                localStorage.setItem(
+                    'deliveryFee',
+                    deliveryFee.toFixed(2)
+                );
+
+                localStorage.setItem(
+                    'grandTotal',
+                    grandTotal.toFixed(2)
+                );
+
+
+                /* ----------------------------------------------
+                   DEBUG INFORMATION
+                ---------------------------------------------- */
+
+                console.log(
+                    '===================================='
+                );
+
+                console.log(
+                    'NEXPAK CHECKOUT DATA'
+                );
+
+                console.log(
+                    checkoutData
+                );
+
+                console.log(
+                    'Subtotal:',
+                    subtotal
+                );
+
+                console.log(
+                    'Delivery:',
+                    deliveryFee
+                );
+
+                console.log(
+                    'Grand Total:',
+                    grandTotal
+                );
+
+                console.log(
+                    '===================================='
+                );
+
+
+                /* ----------------------------------------------
+                   GO TO CHECKOUT PAGE
+                ---------------------------------------------- */
+
+                window.location.href =
+                    '../checkout.html';
+            }
+        );
+
+    });
+</script>
+
+
+<!-- ==========================================================
+     NEXPAK CORE SCRIPTS
+========================================================== -->
+
+<script src="../../js/delivery-calculator.js"></script>
+
+<script src="../../js/checkout.js"></script>
+
+<script src="../../js/payments.js"></script>
+
+
+<!-- ==========================================================
+     CHATBOT
+========================================================== -->
+
+<script src="../../js/chatbot-knowledge.js"></script>
+
+<script src="../../js/chatbot.js"></script>
+
+
+<!-- ==========================================================
+     SEO + SCHEMA
+========================================================== -->
+
+<script src="../../seo-schema.js"></script>
+
+<script src="../seo-schema-injector.js"></script>
+
+
+</body>
+</html>
