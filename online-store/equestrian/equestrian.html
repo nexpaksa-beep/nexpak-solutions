@@ -1156,15 +1156,14 @@ function proceedToCheckoutModal() {
   }
 
   /*
+   * Convert Equestrian cart to the
+   * standard Nexpak checkout format.
+   *
    * IMPORTANT:
+   * p.price is EX VAT.
    *
-   * Product prices in the Equestrian store are stored
-   * EX VAT.
-   *
-   * The product card displays the VAT-inclusive price,
-   * but checkout must receive the EX-VAT price.
-   *
-   * checkout.js is responsible for calculating VAT once.
+   * Do NOT add VAT here.
+   * checkout.js calculates VAT once.
    */
 
   const standardizedItems = cart.map(item => {
@@ -1180,17 +1179,14 @@ function proceedToCheckoutModal() {
         : "Equestrian Product",
 
       /*
-       * SEND EX-VAT PRICE
-       *
-       * DO NOT use:
-       * p.price * (1 + VAT)
+       * EX VAT PRICE
        */
 
       price: p
         ? Number(p.price)
         : 0,
 
-      qty: item.qty,
+      qty: Number(item.qty),
 
       variant:
         item.variant || ""
@@ -1201,21 +1197,24 @@ function proceedToCheckoutModal() {
 
 
   /*
-   * Calculate EX-VAT cart subtotal.
-   *
-   * VAT will be calculated by checkout.js.
+   * Calculate EX-VAT subtotal.
    */
 
   const total =
     standardizedItems.reduce(
       (acc, item) =>
-        acc + (
+        acc +
+        (
           Number(item.price) *
           Number(item.qty)
         ),
       0
     );
 
+
+  /*
+   * Calculate total quantity.
+   */
 
   const totalCount =
     cart.reduce(
@@ -1226,7 +1225,7 @@ function proceedToCheckoutModal() {
 
 
   /*
-   * Save standard checkout cart.
+   * Save cart for checkout.html.
    */
 
   localStorage.setItem(
@@ -1244,8 +1243,10 @@ function proceedToCheckoutModal() {
 
 
   /*
-   * IMPORTANT:
-   * This total is EX VAT.
+   * EX-VAT subtotal.
+   *
+   * checkout.js will calculate
+   * the 15% VAT.
    */
 
   localStorage.setItem(
@@ -1255,13 +1256,13 @@ function proceedToCheckoutModal() {
 
 
   /*
-   * Go to main checkout.
+   * Open main checkout page.
    */
 
   window.location.href =
     "../../checkout.html";
 
-      }
+  }
 
 function toast(msg) {
   const t = document.getElementById("toast");
