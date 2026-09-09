@@ -1571,54 +1571,49 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="../seo-schema.js"></script>
 <script src="../seo-schema-injector.js"></script>
 
-<script>
-    <!-- ==========================================================
-     BOTTOM CHECKOUT
-========================================================== -->
+<!-- BOTTOM CART CONTROLS -->
 
 <div style="
+    width:100%;
     text-align:center;
-    margin:50px 20px 60px;
+    padding:40px 20px;
+    margin-top:30px;
+    box-sizing:border-box;
 ">
-
-    <!-- PROCEED TO CHECKOUT -->
 
     <button
         type="button"
         onclick="window.location.href='../checkout.html';"
         style="
-            display:block;
-            width:100%;
+            display:block !important;
+            width:100% !important;
             max-width:600px;
-            margin:0 auto;
-            padding:22px 30px;
-            border:none;
+            margin:0 auto 15px auto;
+            padding:22px 20px;
+            border:0;
             border-radius:15px;
             background:#354c3b;
-            color:#fff;
+            color:#ffffff;
             font-size:22px;
             font-weight:800;
             cursor:pointer;
-            box-shadow:0 8px 20px rgba(0,0,0,0.2);
+            box-sizing:border-box;
         "
     >
-        🛒 &nbsp; PROCEED TO CHECKOUT
+        🛒 PROCEED TO CHECKOUT
     </button>
-
-
-    <!-- CLEAR CART -->
 
     <button
         type="button"
         onclick="window.clearCart();"
         style="
-            display:block;
-            margin:15px auto 0;
-            padding:14px 25px;
-            border:none;
+            display:block !important;
+            margin:15px auto 0 auto;
+            padding:14px 28px;
+            border:0;
             border-radius:10px;
             background:#b91c1c;
-            color:#fff;
+            color:#ffffff;
             font-size:16px;
             font-weight:700;
             cursor:pointer;
@@ -1628,7 +1623,6 @@ document.addEventListener('DOMContentLoaded', function () {
     </button>
 
 </div>
-
 
 </body>
 </html>
