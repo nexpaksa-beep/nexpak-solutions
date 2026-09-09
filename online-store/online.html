@@ -546,254 +546,736 @@
                         </div>
                         
 
-        <!-- ==========================================================
-             CHECKOUT SUMMARY & DELIVERY CALCULATOR
-             ========================================================== -->
-        <div id="checkout" class="app-checkout-container" style="text-align: center;">
-            <h2 style="margin-top:0; color: var(--primary-blue); text-transform: uppercase; letter-spacing: 0.5px;">Ready to Complete Your Order?</h2>
-            <p style="color: #475569; font-size: 14px; margin-bottom: 25px;">Review your selections above, add items to your cart or quote, and proceed to our secure checkout page.</p>
-            
-            <div class="app-summary-box" style="max-width: 500px; margin: 0 auto 20px auto; text-align: left;">
-                <div class="app-summary-line">
-                    <span>Items in Cart:</span>
-                    <strong id="cart-count-display">0</strong>
-                </div>
-                <div class="app-summary-line">
-                    <span>Subtotal:</span>
-                    <span id="cart-subtotal-display">R0.00</span>
-                </div>
-                <div class="app-summary-line">
-                    <span>Estimated Weight:</span>
-                    <strong id="cart-weight-display">0.0 kg</strong>
-                </div>
-                <div class="app-summary-line">
-                    <span>Estimated Delivery Fee:</span>
-                    <span id="delivery-fee-display">R0.00</span>
-                </div>
-                <div class="app-summary-line app-summary-total">
-                    <span>Grand Total:</span>
-                    <span id="cart-total-display">R0.00</span>
-                </div>
-                
-                <button type="button" onclick="localStorage.clear(); window.location.reload();" class="custom-app-btn" style="background-color: #dc2626; color: #ffffff; width: 100%; margin-top: 15px; padding: 10px; border: none; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-weight: bold;">
-                       Clear Cart
-                </button>
-                
-            </div>
+                            <!-- ==========================================================
+     CART, VARIANT, DELIVERY & CHECKOUT SCRIPT
+========================================================== -->
 
-            <a href="../checkout.html" class="custom-app-btn" style="display: inline-block; text-decoration: none; width: 100%; max-width: 500px; padding: 16px; font-size: 14px; box-sizing: border-box;">
-                Proceed to Secure Checkout
-            </a>
-        </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    'use strict';
 
-    </div>
+    /* ==========================================================
+       LOAD CART DATA
+    ========================================================== */
 
-    <!-- Floating WhatsApp Button -->
-    <a href="https://wa.me/27836308249?text=Hello%20Nexpak%20Security%20Solutions,%20I%20would%20like%20more%20information..." class="whatsapp-float" target="_blank" aria-label="Contact us on WhatsApp">
-        <svg style="width:36px;height:36px" viewBox="0 0 24 24">
-            <path fill="#FFFFFF" d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2z"/>
-        </svg>
-    </a>
+    let cartCount = parseInt(
+        localStorage.getItem('nexpak_cart_count') || '0',
+        10
+    );
 
-    <footer>
-        <div style="margin-bottom: 15px;">
-            <a href="../index.html">Home</a> | 
-            <a href="#security-kits">Security Kits</a> | 
-            <a href="../checkout.html">Checkout</a> | 
-            <a href="https://wa.me/27836308249" target="_blank">Contact Us</a>
-        </div>
-        <div class="footer-bottom">
-    <p>© 2026 Nexpak Security Solutions. All Rights Reserved. | <a href="../terms.html">Terms & Conditions</a></p>
-        </div>
-        
-    </footer>
+    let cartSubtotal = parseFloat(
+        localStorage.getItem('nexpak_cart_total') || '0'
+    );
 
-    <!-- CART, VARIANT, & DELIVERY CALCULATION SCRIPT -->
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        let cartCount = parseInt(localStorage.getItem('nexpak_cart_count')) || 0;
-        
-        // MATHEMATICAL LOCK: Use unified naming keys across your store and checkout
-        let cartSubtotal = parseFloat(localStorage.getItem('nexpak_cart_total')) || 0; 
-        let totalWeight = parseFloat(localStorage.getItem('nexpak_cart_weight')) || 0;
-        let cartItems = JSON.parse(localStorage.getItem('nexpak_cart_items')) || [];
+    let totalWeight = parseFloat(
+        localStorage.getItem('nexpak_cart_weight') || '0'
+    );
 
-        // New Delivery Calculation Logic (Base R150 up to 5kg, then R18/kg. Free shipping if subtotal >= R10,000)
-        function calculateDeliveryFee(subtotal, weight) {
-            if (subtotal >= 10000 || subtotal === 0) {
-                return 0.00;
-            }
-            let baseFee = 80.00;
-            let ratePerKg = 7.00;
-            if (weight <= 5) {
-                return baseFee;
-            } else {
-                return baseFee + ((weight - 5) * ratePerKg);
-            }
+    let cartItems = [];
+
+    try {
+        cartItems = JSON.parse(
+            localStorage.getItem('nexpak_cart_items') || '[]'
+        );
+
+        if (!Array.isArray(cartItems)) {
+            cartItems = [];
+        }
+    } catch (error) {
+        console.error('Could not read cart items:', error);
+        cartItems = [];
+    }
+
+
+    /* ==========================================================
+       DELIVERY CALCULATOR
+       R80 BASE DELIVERY UP TO 5KG
+       R7 PER ADDITIONAL KG
+       FREE DELIVERY ABOVE R10,000
+    ========================================================== */
+
+    function calculateDeliveryFee(subtotal, weight) {
+
+        subtotal = Number(subtotal) || 0;
+        weight = Number(weight) || 0;
+
+        // Empty cart
+        if (subtotal <= 0) {
+            return 0;
         }
 
-        function updateCartUI() {
-            const navSpans = document.querySelectorAll('.meta-nav span');
-            if (navSpans.length > 1) {
-                navSpans[1].textContent = cartCount;
-            }
-            
-                        // Sync navigation counter hook if matching your upper layout structure
-            const navCountAlt = document.getElementById('cart-count-nav');
-            if (navCountAlt) navCountAlt.textContent = cartCount;
-
-            const countDisplay = document.getElementById('cart-count-display') || document.getElementById('cart-count-bottom');
-            const subtotalDisplay = document.getElementById('cart-subtotal-display') || document.getElementById('cart-total-bottom');
-            const weightDisplay = document.getElementById('cart-weight-display');
-            const deliveryDisplay = document.getElementById('delivery-fee-display');
-            const totalDisplay = document.getElementById('cart-total-display');
-
-            const deliveryFee = calculateDeliveryFee(cartSubtotal, totalWeight);
-            const grandTotal = cartSubtotal + deliveryFee;
-
-            if (countDisplay) countDisplay.textContent = cartCount;
-            if (subtotalDisplay) subtotalDisplay.textContent = 'R ' + cartSubtotal.toLocaleString('en-ZA', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            if (weightDisplay) weightDisplay.textContent = totalWeight.toFixed(1) + ' kg';
-            if (deliveryDisplay) {
-                deliveryDisplay.textContent = deliveryFee === 0 ? 'FREE' : 'R ' + deliveryFee.toLocaleString('en-ZA', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            }
-            if (totalDisplay) totalDisplay.textContent = 'R ' + grandTotal.toLocaleString('en-ZA', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        // Free delivery over R10,000
+        if (subtotal >= 10000) {
+            return 0;
         }
 
-        updateCartUI();
+        // Up to 5kg
+        if (weight <= 5) {
+            return 80;
+        }
 
-        // Handle variant changes and dynamic image loading
-        document.querySelectorAll('.app-product-card').forEach(card => {
-            const select = card.querySelector('.variant-selector');
-            const priceTag = card.querySelector('.product-price-tag');
-            const titleElement = card.querySelector('h3');
-            const imgElement = card.querySelector('img');
-            
+        // Over 5kg
+        return 80 + ((weight - 5) * 7);
+    }
+
+
+    /* ==========================================================
+       SAVE ALL CART DATA
+    ========================================================== */
+
+    function saveCartData() {
+
+        const deliveryFee = calculateDeliveryFee(
+            cartSubtotal,
+            totalWeight
+        );
+
+        const grandTotal = cartSubtotal + deliveryFee;
+
+
+        /* ------------------------------------------------------
+           PRIMARY NEXPAK STORAGE
+        ------------------------------------------------------ */
+
+        localStorage.setItem(
+            'nexpak_cart_count',
+            String(cartCount)
+        );
+
+        localStorage.setItem(
+            'nexpak_cart_total',
+            cartSubtotal.toFixed(2)
+        );
+
+        localStorage.setItem(
+            'nexpak_cart_weight',
+            totalWeight.toFixed(2)
+        );
+
+        localStorage.setItem(
+            'nexpak_cart_items',
+            JSON.stringify(cartItems)
+        );
+
+
+        /* ------------------------------------------------------
+           COMPATIBILITY STORAGE
+           Used by existing checkout/payment scripts
+        ------------------------------------------------------ */
+
+        localStorage.setItem(
+            'cartCount',
+            String(cartCount)
+        );
+
+        localStorage.setItem(
+            'cartSubtotal',
+            cartSubtotal.toFixed(2)
+        );
+
+        localStorage.setItem(
+            'totalWeight',
+            totalWeight.toFixed(2)
+        );
+
+        localStorage.setItem(
+            'cartItems',
+            JSON.stringify(cartItems)
+        );
+
+        localStorage.setItem(
+            'deliveryFee',
+            deliveryFee.toFixed(2)
+        );
+
+        localStorage.setItem(
+            'grandTotal',
+            grandTotal.toFixed(2)
+        );
+
+
+        /* ------------------------------------------------------
+           UNIFIED CHECKOUT OBJECT
+        ------------------------------------------------------ */
+
+        const checkoutData = {
+            cartCount: cartCount,
+            cartItems: cartItems,
+            subtotal: Number(cartSubtotal.toFixed(2)),
+            weight: Number(totalWeight.toFixed(2)),
+            deliveryFee: Number(deliveryFee.toFixed(2)),
+            grandTotal: Number(grandTotal.toFixed(2)),
+            currency: 'ZAR',
+            updatedAt: new Date().toISOString()
+        };
+
+        localStorage.setItem(
+            'nexpak_checkout_data',
+            JSON.stringify(checkoutData)
+        );
+
+
+        return {
+            deliveryFee: deliveryFee,
+            grandTotal: grandTotal
+        };
+    }
+
+
+    /* ==========================================================
+       UPDATE CART DISPLAY
+    ========================================================== */
+
+    function updateCartUI() {
+
+        const totals = saveCartData();
+
+        const deliveryFee = totals.deliveryFee;
+        const grandTotal = totals.grandTotal;
+
+
+        /* ------------------------------------------------------
+           NAVIGATION CART COUNTER
+        ------------------------------------------------------ */
+
+        const navSpans = document.querySelectorAll('.meta-nav span');
+
+        if (navSpans.length > 1) {
+            navSpans[1].textContent = cartCount;
+        }
+
+
+        const navCountAlt =
+            document.getElementById('cart-count-nav');
+
+        if (navCountAlt) {
+            navCountAlt.textContent = cartCount;
+        }
+
+
+        /* ------------------------------------------------------
+           CART SUMMARY ELEMENTS
+        ------------------------------------------------------ */
+
+        const countDisplay =
+            document.getElementById('cart-count-display') ||
+            document.getElementById('cart-count-bottom');
+
+        const subtotalDisplay =
+            document.getElementById('cart-subtotal-display') ||
+            document.getElementById('cart-total-bottom');
+
+        const weightDisplay =
+            document.getElementById('cart-weight-display');
+
+        const deliveryDisplay =
+            document.getElementById('delivery-fee-display');
+
+        const totalDisplay =
+            document.getElementById('cart-total-display');
+
+
+        /* ------------------------------------------------------
+           FORMAT MONEY
+        ------------------------------------------------------ */
+
+        const formatMoney = (amount) => {
+
+            return 'R ' + Number(amount).toLocaleString(
+                'en-ZA',
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            );
+        };
+
+
+        /* ------------------------------------------------------
+           UPDATE UI
+        ------------------------------------------------------ */
+
+        if (countDisplay) {
+            countDisplay.textContent = cartCount;
+        }
+
+        if (subtotalDisplay) {
+            subtotalDisplay.textContent =
+                formatMoney(cartSubtotal);
+        }
+
+        if (weightDisplay) {
+            weightDisplay.textContent =
+                totalWeight.toFixed(1) + ' kg';
+        }
+
+        if (deliveryDisplay) {
+
+            deliveryDisplay.textContent =
+                deliveryFee === 0
+                    ? 'FREE'
+                    : formatMoney(deliveryFee);
+        }
+
+        if (totalDisplay) {
+            totalDisplay.textContent =
+                formatMoney(grandTotal);
+        }
+    }
+
+
+    /* ==========================================================
+       PRODUCT VARIANTS
+    ========================================================== */
+
+    document
+        .querySelectorAll('.app-product-card')
+        .forEach(card => {
+
+            const select =
+                card.querySelector('.variant-selector');
+
+            const priceTag =
+                card.querySelector('.product-price-tag');
+
+            const titleElement =
+                card.querySelector('h3');
+
+            const imgElement =
+                card.querySelector('img');
+
+
             if (select && priceTag) {
-                const basePrice = priceTag.textContent;
+
+                const basePrice =
+                    priceTag.textContent;
+
 
                 select.addEventListener('change', (e) => {
-                    const selectedOption = e.target.options[e.target.selectedIndex];
-                    const selectedText = selectedOption.text;
-                    const priceMatch = selectedText.match(/R[\d,]+(\.\d{2})?/);
-                    
+
+                    const selectedOption =
+                        e.target.options[
+                            e.target.selectedIndex
+                        ];
+
+                    const selectedText =
+                        selectedOption.text;
+
+
+                    /* ------------------------------------------------
+                       UPDATE PRICE
+                    ------------------------------------------------ */
+
+                    const priceMatch =
+                        selectedText.match(
+                            /R[\d,]+(?:\.\d{2})?/
+                        );
+
                     if (priceMatch) {
-                        priceTag.textContent = priceMatch[0];
+
+                        priceTag.textContent =
+                            priceMatch[0];
+
                     } else {
-                        priceTag.textContent = basePrice;
+
+                        priceTag.textContent =
+                            basePrice;
                     }
 
-                    // Dynamic image switcher for Centurion slide gate kits
-                    if (titleElement && titleElement.textContent.includes('Centurion Slide Gate Kit') && imgElement) {
-                        const textLower = selectedText.toLowerCase();
+
+                    /* ------------------------------------------------
+                       DYNAMIC CENTURION IMAGE
+                    ------------------------------------------------ */
+
+                    if (
+                        titleElement &&
+                        titleElement.textContent.includes(
+                            'Centurion Slide Gate Kit'
+                        ) &&
+                        imgElement
+                    ) {
+
+                        const textLower =
+                            selectedText.toLowerCase();
+
+
                         if (textLower.includes('d3')) {
-                            imgElement.src = '../images/d3.png';
-                        } else if (textLower.includes('d5')) {
-                            imgElement.src = '../images/d5.png';
-                        } else if (textLower.includes('d6')) {
-                            imgElement.src = '../images/d6.png';
-                        } else if (textLower.includes('d10')) {
-                            imgElement.src = '../images/d10.png';
-                        } else if (textLower.includes('sdo')) {
-                            imgElement.src = '../images/sdo.png';
-                        } else if (textLower.includes('vantage')) {
-                            imgElement.src = '../images/van.png';
+
+                            imgElement.src =
+                                '../images/d3.png';
+
+                        } else if (
+                            textLower.includes('d5')
+                        ) {
+
+                            imgElement.src =
+                                '../images/d5.png';
+
+                        } else if (
+                            textLower.includes('d6')
+                        ) {
+
+                            imgElement.src =
+                                '../images/d6.png';
+
+                        } else if (
+                            textLower.includes('d10')
+                        ) {
+
+                            imgElement.src =
+                                '../images/d10.png';
+
+                        } else if (
+                            textLower.includes('sdo')
+                        ) {
+
+                            imgElement.src =
+                                '../images/sdo.png';
+
+                        } else if (
+                            textLower.includes('vantage')
+                        ) {
+
+                            imgElement.src =
+                                '../images/van.png';
                         }
                     }
+
                 });
             }
 
-            const btnCart = card.querySelector('.custom-app-btn:not(.btn-info):not(.btn-quote)') || card.querySelector('.btn-add-to-cart');
-            const btnQuote = card.querySelector('.btn-quote') || card.querySelector('.btn-add-to-quote');
-            const productName = titleElement?.textContent || 'Security Item';
+
+            /* ======================================================
+               PRODUCT BUTTONS
+            ====================================================== */
+
+            const btnCart =
+                card.querySelector(
+                    '.custom-app-btn:not(.btn-info):not(.btn-quote)'
+                ) ||
+                card.querySelector('.btn-add-to-cart');
+
+
+            const btnQuote =
+                card.querySelector('.btn-quote') ||
+                card.querySelector('.btn-add-to-quote');
+
+
+            const productName =
+                titleElement?.textContent?.trim() ||
+                'Security Item';
+
+
+            /* ======================================================
+               ADD TO CART
+            ====================================================== */
 
             if (btnCart) {
+
                 btnCart.addEventListener('click', () => {
-                    cartCount++;
-                    
+
                     let numericPrice = 0;
-                    let itemWeight = 2.0; 
+
+                    let itemWeight = 2.0;
+
                     let variantLabel = '';
 
+
+                    /* ------------------------------------------------
+                       VARIANT PRODUCT
+                    ------------------------------------------------ */
+
                     if (select) {
-                        const selectedOption = select.options[select.selectedIndex];
-                        numericPrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
-                        itemWeight = parseFloat(selectedOption.getAttribute('data-weight')) || 2.0;
-                        variantLabel = ' (' + selectedOption.textContent.split(' - ')[0] + ')';
-                    } else {
-                        if (priceTag) {
-                            const cleanPrice = priceTag.textContent.replace(/,/g, '').replace(/[^0-9.]/g, '');
-                            numericPrice = parseFloat(cleanPrice) || 0;
-                        } else {
-                            numericPrice = parseFloat(card.getAttribute('data-single-price')) || 0;
-                        }
-                        itemWeight = parseFloat(card.getAttribute('data-single-weight')) || 0.5;
+
+                        const selectedOption =
+                            select.options[
+                                select.selectedIndex
+                            ];
+
+
+                        numericPrice =
+                            parseFloat(
+                                selectedOption.getAttribute(
+                                    'data-price'
+                                )
+                            ) || 0;
+
+
+                        itemWeight =
+                            parseFloat(
+                                selectedOption.getAttribute(
+                                    'data-weight'
+                                )
+                            ) || 2.0;
+
+
+                        variantLabel =
+                            ' (' +
+                            selectedOption.textContent
+                                .split(' - ')[0]
+                                .trim() +
+                            ')';
                     }
 
+
+                    /* ------------------------------------------------
+                       NORMAL PRODUCT
+                    ------------------------------------------------ */
+
+                    else {
+
+                        if (priceTag) {
+
+                            const cleanPrice =
+                                priceTag.textContent
+                                    .replace(/,/g, '')
+                                    .replace(/[^0-9.]/g, '');
+
+
+                            numericPrice =
+                                parseFloat(cleanPrice) || 0;
+
+                        } else {
+
+                            numericPrice =
+                                parseFloat(
+                                    card.getAttribute(
+                                        'data-single-price'
+                                    )
+                                ) || 0;
+                        }
+
+
+                        itemWeight =
+                            parseFloat(
+                                card.getAttribute(
+                                    'data-single-weight'
+                                )
+                            ) || 0.5;
+                    }
+
+
+                    /* ------------------------------------------------
+                       CREATE CART ITEM
+                    ------------------------------------------------ */
+
+                    const cartItem = {
+
+                        name:
+                            productName +
+                            variantLabel,
+
+                        price:
+                            Number(numericPrice.toFixed(2)),
+
+                        weight:
+                            Number(itemWeight.toFixed(2)),
+
+                        quantity: 1
+                    };
+
+
+                    /* ------------------------------------------------
+                       UPDATE CART
+                    ------------------------------------------------ */
+
+                    cartCount++;
+
                     cartSubtotal += numericPrice;
+
                     totalWeight += itemWeight;
 
-                    cartItems.push({ 
-                        name: productName + variantLabel, 
-                        price: numericPrice, 
-                        weight: itemWeight,
-                        quantity: 1 
-                    });
+                    cartItems.push(cartItem);
 
-                    // Save under custom namespace
-                    localStorage.setItem('nexpak_cart_count', cartCount);
-                    localStorage.setItem('nexpak_cart_total', cartSubtotal);
-                    localStorage.setItem('nexpak_cart_weight', totalWeight);
-                    localStorage.setItem('nexpak_cart_items', JSON.stringify(cartItems));
 
-                    // Save under standard global keys for payment/checkout page compatibility
-                    localStorage.setItem('cartCount', cartCount);
-                    localStorage.setItem('cartSubtotal', cartSubtotal);
-                    localStorage.setItem('totalWeight', totalWeight);
-                    localStorage.setItem('cartItems', JSON.stringify(cartItems));
+                    /* ------------------------------------------------
+                       SAVE EVERYTHING
+                    ------------------------------------------------ */
+
+                    saveCartData();
 
                     updateCartUI();
-                    alert(`${productName}${variantLabel} added to cart!`);
+
+
+                    /* ------------------------------------------------
+                       USER MESSAGE
+                    ------------------------------------------------ */
+
+                    alert(
+                        `${productName}${variantLabel} added to cart!`
+                    );
+
                 });
             }
+
+
+            /* ======================================================
+               QUOTE BUTTON
+            ====================================================== */
 
             if (btnQuote) {
+
                 btnQuote.addEventListener('click', () => {
-                    alert(`${productName} has been added to your quotation request list.`);
+
+                    alert(
+                        `${productName} has been added to your quotation request list.`
+                    );
+
                 });
             }
+
         });
-    });
 
-    // Global Clear Cart Function
-    window.clearCart = function() {
-        if (confirm('Are you sure you want to clear your cart?')) {
-            // Clear custom keys
-            localStorage.removeItem('nexpak_cart_count');
-            localStorage.removeItem('nexpak_cart_total');
-            localStorage.removeItem('nexpak_cart_weight');
-            localStorage.removeItem('nexpak_cart_items');
 
-            // Clear standard global keys
-            localStorage.removeItem('cartCount');
-            localStorage.removeItem('cartSubtotal');
-            localStorage.removeItem('totalWeight');
-            localStorage.removeItem('cartItems');
+    /* ==========================================================
+       PROCEED TO CHECKOUT
+    ========================================================== */
 
-            window.location.reload();
-        }
-    };
-    </script>
-  <script src="../../js/delivery-calculator.js"></script>
-<script src="../../js/checkout.js"></script>
-<script src="../../js/chatbot-knowledge.js"></script>
-<script src="../../js/chatbot.js"></script>
-<script src="seo-schema.js"></script>
-<script src="seo-schema-injector.js"></script>
+    const checkoutButton =
+        document.getElementById(
+            'proceedToCheckout'
+        );
 
-    
-</body>
-</html>
 
-    
+    if (checkoutButton) {
+
+        checkoutButton.addEventListener(
+            'click',
+            function () {
+
+                /* ----------------------------------------------
+                   CHECK CART
+                ---------------------------------------------- */
+
+                if (
+                    cartCount <= 0 ||
+                    cartItems.length === 0
+                ) {
+
+                    alert(
+                        'Your cart is empty. Please add products before proceeding to checkout.'
+                    );
+
+                    return;
+                }
+
+
+                /* ----------------------------------------------
+                   SAVE FINAL CHECKOUT DATA
+                ---------------------------------------------- */
+
+                const totals =
+                    saveCartData();
+
+
+                const checkoutData = {
+
+                    cartCount:
+                        cartCount,
+
+                    cartItems:
+                        cartItems,
+
+                    subtotal:
+                        Number(
+                            cartSubtotal.toFixed(2)
+                        ),
+
+                    weight:
+                        Number(
+                            totalWeight.toFixed(2)
+                        ),
+
+                    deliveryFee:
+                        Number(
+                            totals.deliveryFee.toFixed(2)
+                        ),
+
+                    grandTotal:
+                        Number(
+                            totals.grandTotal.toFixed(2)
+                        ),
+
+                    currency:
+                        'ZAR',
+
+                    createdAt:
+                        new Date().toISOString()
+                };
+
+
+                localStorage.setItem(
+                    'nexpak_checkout_data',
+                    JSON.stringify(checkoutData)
+                );
+
+
+                /* ----------------------------------------------
+                   DEBUG
+                ---------------------------------------------- */
+
+                console.log(
+                    'Nexpak checkout data:',
+                    checkoutData
+                );
+
+
+                /* ----------------------------------------------
+                   REDIRECT
+                ---------------------------------------------- */
+
+                window.location.href =
+                    '../checkout.html';
+
+            }
+        );
+    }
+
+
+    /* ==========================================================
+       INITIAL CART DISPLAY
+    ========================================================== */
+
+    updateCartUI();
+
+});
+
+
+/* ==============================================================
+   GLOBAL CLEAR CART
+============================================================== */
+
+window.clearCart = function () {
+
+    if (
+        confirm(
+            'Are you sure you want to clear your cart?'
+        )
+    ) {
+
+        /* ------------------------------------------------------
+           NEXPAK CART KEYS
+        ------------------------------------------------------ */
+
+        localStorage.removeItem(
+            'nexpak_cart_count'
+        );
+
+        localStorage.removeItem(
+            'nexpak_cart_total'
+        );
+
+        localStorage.removeItem(
+            'nexpak_cart_weight'
+        );
+
+        localStorage.removeItem(
+            'nexpak_cart_items'
+        );
+
+
+        /* ------------------------------------------------------
+           STANDARD CART KEYS
+        ------------------------------------------------------ */
+
     
