@@ -1604,22 +1604,43 @@ document.addEventListener('DOMContentLoaded', function () {
     </button>
 
     <button
-        type="button"
-        onclick="window.clearCart();"
-        style="
-            display:block !important;
-            margin:15px auto 0 auto;
-            padding:14px 28px;
-            border:0;
-            border-radius:10px;
-            background:#b91c1c;
-            color:#ffffff;
-            font-size:16px;
-            font-weight:700;
-            cursor:pointer;
-        "
-    >
-        🗑️ CLEAR CART
+    type="button"
+    style="
+        display:block !important;
+        visibility:visible !important;
+        opacity:1 !important;
+        position:relative !important;
+        z-index:99999 !important;
+        margin:20px auto !important;
+        padding:15px 30px !important;
+        background:#b91c1c !important;
+        color:#ffffff !important;
+        border:none !important;
+        border-radius:10px !important;
+        font-size:17px !important;
+        font-weight:bold !important;
+        cursor:pointer !important;
+    "
+    onclick="
+        if (confirm('Are you sure you want to clear your cart?')) {
+            localStorage.removeItem('nexpak_cart_count');
+            localStorage.removeItem('nexpak_cart_total');
+            localStorage.removeItem('nexpak_cart_weight');
+            localStorage.removeItem('nexpak_cart_items');
+            localStorage.removeItem('cartCount');
+            localStorage.removeItem('cartSubtotal');
+            localStorage.removeItem('cartItems');
+            localStorage.removeItem('nexpak_checkout_data');
+            localStorage.removeItem('nexpak_delivery_fee');
+            localStorage.removeItem('nexpak_delivery_method');
+            localStorage.removeItem('nexpak_delivery_size');
+            localStorage.removeItem('nexpak_delivery_km');
+            localStorage.removeItem('nexpak_delivery_eta');
+            location.reload();
+        }
+    "
+>
+    🗑️ CLEAR CART
     </button>
 
 </div>
