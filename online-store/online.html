@@ -575,9 +575,10 @@
                     <span id="cart-total-display">R0.00</span>
                 </div>
                 
-                <button id="clear-cart-btn" class="custom-app-btn" style="background-color: #dc2626; color: #ffffff; width: 100%; margin-top: 15px; padding: 10px; border: none; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-weight: bold;">
-                    Clear Cart
+                <button type="button" onclick="localStorage.clear(); window.location.reload();" class="custom-app-btn" style="background-color: #dc2626; color: #ffffff; width: 100%; margin-top: 15px; padding: 10px; border: none; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-weight: bold;">
+                       Clear Cart
                 </button>
+                
             </div>
 
             <a href="../checkout.html" class="custom-app-btn" style="display: inline-block; text-decoration: none; width: 100%; max-width: 500px; padding: 16px; font-size: 14px; box-sizing: border-box;">
