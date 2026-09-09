@@ -1,546 +1,963 @@
-document.addEventListener('DOMContentLoaded', () => {
-    'use strict';
+/* =========================================================
+   NEXPAK SECURITY SOLUTIONS
+   KT COURIERS DELIVERY CALCULATOR
+   =========================================================
 
-    // =========================================================================
-    // NEXPAK SECURITY SOLUTIONS
-    // DELIVERY CALCULATOR
-    // =========================================================================
-    // This file is ONLY responsible for delivery calculation.
-    //
-    // checkout.js handles:
-    // - Cart
-    // - Customer details
-    // - VAT
-    // - Order submission
-    //
-    // payments.js handles:
-    // - Payment method
-    // - Capitec EFT / QR
-    // - POP / WhatsApp
-    // =========================================================================
+   DELIVERY PROVIDER:
+   KT Couriers
 
+   ECONOMY:
+   Small  = R89
+   Medium = R129
+   Large  = R179
+   ETA    = 3–4 days
 
-    // =========================================================================
-    // 1. CONFIGURATION
-    // =========================================================================
+   STANDARD:
+   Small  = R129
+   Medium = R179
+   Large  = R239
+   ETA    = 1–2 days
 
-    const BASE_BOOKING_FEE = 35.00;
-    const BASE_WEIGHT_LIMIT = 2.00;
-    const PER_KG_EXCESS_RATE = 4.50;
-    const FUEL_BUFFER_MULTIPLIER = 1.15;
+   EXPRESS:
+   R4.50 per KM
+   ETA = Same Day
 
-    const WAREHOUSE_LOCATION = 'Benoni';
+   IMPORTANT:
+   This file handles DELIVERY ONLY.
+   It does NOT handle:
+   - Checkout submission
+   - Payments
+   - WhatsApp orders
+   - Cart clearing
 
+   ========================================================= */
 
-    // =========================================================================
-    // 2. ESTIMATED DISTANCES FROM BENONI
-    // =========================================================================
+(function () {
 
-    const areaDistanceMap = {
-        'benoni': 5,
-        'brakpan': 10,
-        'boksburg': 12,
-        'springs': 15,
-        'kempton park': 15,
-        'edenvale': 22,
-        'germiston': 25,
-        'bedfordview': 28,
-        'johannesburg': 35,
-        'jhb': 35,
-        'randburg': 40,
-        'sandton': 40,
-        'midrand': 45,
-        'centurion': 65,
-        'pretoria': 75,
-        'pta': 75
+    "use strict";
+
+    /* =====================================================
+       KT COURIERS CONFIGURATION
+    ===================================================== */
+
+    const KT_RATES = {
+
+        economy: {
+            name: "Economy",
+            description: "3–4 business days",
+            small: 89,
+            medium: 129,
+            large: 179
+        },
+
+        standard: {
+            name: "Standard",
+            description: "1–2 business days",
+            small: 129,
+            medium: 179,
+            large: 239
+        },
+
+        express: {
+            name: "Express",
+            description: "Same-day delivery",
+            perKm: 4.50
+        }
+
     };
 
 
-    // =========================================================================
-    // 3. DOM ELEMENTS
-    // =========================================================================
+    /* =====================================================
+       STORAGE KEYS
+    ===================================================== */
 
-    const btnCalculate = document.getElementById('btnCalculateDelivery');
-    const distanceInput = document.getElementById('distance-km');
-    const addressInput = document.getElementById('shippingAddress');
+    const STORAGE = {
 
-    const deliveryDisplay = document.getElementById('chkDelivery');
-    const deliverySummary = document.getElementById('chkDeliverySummary');
+        method: "nexpak_delivery_method",
+        size: "nexpak_delivery_size",
+        km: "nexpak_delivery_km",
+        fee: "nexpak_delivery_fee",
+        eta: "nexpak_delivery_eta"
 
-    const deliveryStatus = document.getElementById('deliveryStatus');
-    const deliveryInfo = document.getElementById('deliveryInfo');
+    };
 
 
-    // =========================================================================
-    // 4. GET CART ITEMS
-    // =========================================================================
+    /* =====================================================
+       CART HELPERS
+    ===================================================== */
 
-    function getCartItems() {
+    function getCart() {
 
-        const possibleCartKeys = [
-            'nexpak_cart_items',
-            'cart_items',
-            'cartItems',
-            'cart'
+        const possibleKeys = [
+            "nexpak_cart_items",
+            "cart_items",
+            "cartItems",
+            "cart"
         ];
 
-        for (const key of possibleCartKeys) {
-
-            const storedCart = localStorage.getItem(key);
-
-            if (!storedCart) {
-                continue;
-            }
+        for (const key of possibleKeys) {
 
             try {
 
-                const parsedCart = JSON.parse(storedCart);
+                const stored = localStorage.getItem(key);
 
-                if (Array.isArray(parsedCart)) {
-                    return parsedCart;
+                if (!stored) continue;
+
+                const parsed = JSON.parse(stored);
+
+                if (Array.isArray(parsed)) {
+                    return parsed;
                 }
 
-                if (parsedCart && Array.isArray(parsedCart.items)) {
-                    return parsedCart.items;
+                if (parsed && Array.isArray(parsed.items)) {
+                    return parsed.items;
                 }
 
             } catch (error) {
 
                 console.warn(
-                    `Nexpak Delivery: Could not read cart key "${key}".`,
+                    "[Nexpak Delivery] Could not read cart:",
+                    key,
                     error
                 );
 
             }
+
         }
 
         return [];
+
     }
 
 
-    // =========================================================================
-    // 5. CALCULATE ACTUAL CART WEIGHT
-    // =========================================================================
+    /* =====================================================
+       ELEMENT HELPERS
+    ===================================================== */
 
-    function getCartWeight() {
+    function getElement(id) {
+        return document.getElementById(id);
+    }
 
-        const cartItems = getCartItems();
 
-        if (!cartItems.length) {
+    function money(value) {
+
+        return "R" + Number(value || 0).toFixed(2);
+
+    }
+
+
+    /* =====================================================
+       DELIVERY METHOD
+    ===================================================== */
+
+    function getSelectedMethod() {
+
+        const select = getElement("deliveryMethod");
+
+        if (select) {
+
+            return String(select.value || "standard").toLowerCase();
+
+        }
+
+
+        const checked = document.querySelector(
+            'input[name="deliveryMethod"]:checked'
+        );
+
+        if (checked) {
+
+            return String(
+                checked.value || "standard"
+            ).toLowerCase();
+
+        }
+
+
+        return localStorage.getItem(STORAGE.method) || "standard";
+
+    }
+
+
+    /* =====================================================
+       PARCEL SIZE
+    ===================================================== */
+
+    function getSelectedSize() {
+
+        const select = getElement("parcelSize");
+
+        if (select) {
+
+            return String(select.value || "medium").toLowerCase();
+
+        }
+
+
+        const checked = document.querySelector(
+            'input[name="parcelSize"]:checked'
+        );
+
+        if (checked) {
+
+            return String(
+                checked.value || "medium"
+            ).toLowerCase();
+
+        }
+
+
+        return localStorage.getItem(STORAGE.size) || "medium";
+
+    }
+
+
+    /* =====================================================
+       DISTANCE
+    ===================================================== */
+
+    function getDistance() {
+
+        const distanceField = getElement("distance-km");
+
+        if (!distanceField) {
             return 0;
         }
 
-        let totalWeight = 0;
-
-        cartItems.forEach(item => {
-
-            let weight = parseFloat(item.weight);
-
-            /*
-             * If a product does not have a weight recorded,
-             * use a conservative default of 0.5kg.
-             */
-            if (!Number.isFinite(weight) || weight <= 0) {
-                weight = 0.5;
-            }
-
-            let quantity = parseInt(item.quantity, 10);
-
-            if (!Number.isFinite(quantity) || quantity < 1) {
-                quantity = 1;
-            }
-
-            totalWeight += weight * quantity;
-
-        });
-
-        return totalWeight;
-    }
-
-
-    // =========================================================================
-    // 6. DISTANCE RATE
-    // =========================================================================
-
-    function getPerKmRate(km) {
-
-        if (km <= 20) {
-            return 5.50;
-        }
-
-        if (km <= 50) {
-            return 6.50;
-        }
-
-        return 7.50;
-    }
-
-
-    // =========================================================================
-    // 7. FIND DISTANCE FROM ADDRESS
-    // =========================================================================
-
-    function detectDistanceFromAddress(address) {
-
-        if (!address) {
-            return null;
-        }
-
-        const addressText = address.toLowerCase();
-
-        for (const [area, distance] of Object.entries(areaDistanceMap)) {
-
-            if (addressText.includes(area)) {
-                return distance;
-            }
-
-        }
-
-        return null;
-    }
-
-
-    // =========================================================================
-    // 8. CALCULATE DELIVERY FEE
-    // =========================================================================
-
-    function calculateDeliveryFee(km, cartWeight) {
-
-        const distance = Number(km);
-        const weight = Number(cartWeight);
-
-        if (!Number.isFinite(distance) || distance < 0) {
-            return 0;
-        }
-
-        const safeWeight =
-            Number.isFinite(weight) && weight >= 0
-                ? weight
-                : 0;
-
-
-        // Distance charge
-        const perKmRate = getPerKmRate(distance);
-
-        const distanceCost = distance * perKmRate;
-
-
-        // Excess weight charge
-        let weightCost = 0;
-
-        if (safeWeight > BASE_WEIGHT_LIMIT) {
-
-            const excessWeight =
-                safeWeight - BASE_WEIGHT_LIMIT;
-
-            weightCost =
-                excessWeight * PER_KG_EXCESS_RATE;
-
-        }
-
-
-        // Base delivery cost
-        const subtotalFee =
-            BASE_BOOKING_FEE +
-            distanceCost +
-            weightCost;
-
-
-        // Fuel / operating buffer
-        let finalFee =
-            subtotalFee * FUEL_BUFFER_MULTIPLIER;
-
-
-        // Local / same-location safety calculation
-        if (distance === 0) {
-
-            finalFee =
-                (BASE_BOOKING_FEE + weightCost) *
-                FUEL_BUFFER_MULTIPLIER;
-
-        }
-
-
-        // Round to cents
-        finalFee =
-            Math.round(finalFee * 100) / 100;
-
-
-        return finalFee;
-    }
-
-
-    // =========================================================================
-    // 9. FORMAT CURRENCY
-    // =========================================================================
-
-    function formatCurrency(amount) {
-
-        return 'R ' + Number(amount).toLocaleString(
-            'en-ZA',
-            {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }
+        const distance = parseFloat(
+            String(distanceField.value || "")
+                .replace(",", ".")
+                .replace(/[^\d.]/g, "")
         );
 
-    }
-
-
-    // =========================================================================
-    // 10. UPDATE DELIVERY DISPLAY
-    // =========================================================================
-
-    function updateDeliveryDisplay(fee, km, weight) {
-
-        const formattedFee = formatCurrency(fee);
-
-
-        if (deliveryDisplay) {
-            deliveryDisplay.textContent = formattedFee;
-        }
-
-
-        if (deliverySummary) {
-            deliverySummary.textContent = formattedFee;
-        }
-
-
-        if (deliveryStatus) {
-
-            deliveryStatus.textContent =
-                `${km} km / ${weight.toFixed(1)} kg calculated`;
-
-        }
-
-
-        if (deliveryInfo) {
-
-            deliveryInfo.innerHTML = `
-                <i class="fa-solid fa-circle-check" style="color:#16a34a;"></i>
-                Delivery calculated from ${WAREHOUSE_LOCATION}:
-                ${km} km / ${weight.toFixed(1)} kg.
-                Delivery fee: <strong>${formattedFee}</strong>
-            `;
-
-        }
+        return Number.isFinite(distance) && distance > 0
+            ? distance
+            : 0;
 
     }
 
 
-    // =========================================================================
-    // 11. SAVE DELIVERY DATA
-    // =========================================================================
-    // checkout.js can retrieve these values without recalculating delivery.
-    // =========================================================================
+    /* =====================================================
+       DELIVERY CALCULATION
+    ===================================================== */
 
-    function saveDeliveryData(km, weight, fee) {
+    function calculateDelivery() {
 
-        localStorage.setItem(
-            'nexpak_delivery_km',
-            String(km)
-        );
-
-        localStorage.setItem(
-            'nexpak_delivery_weight',
-            String(weight)
-        );
-
-        localStorage.setItem(
-            'nexpak_delivery_fee',
-            String(fee)
-        );
-
-    }
+        const method = getSelectedMethod();
+        const size = getSelectedSize();
+        const km = getDistance();
 
 
-    // =========================================================================
-    // 12. CLEAR DELIVERY DATA
-    // =========================================================================
+        /* -------------------------------------------------
+           ECONOMY
+        ------------------------------------------------- */
 
-    function clearDeliveryData() {
+        if (method === "economy") {
 
-        localStorage.removeItem('nexpak_delivery_km');
-        localStorage.removeItem('nexpak_delivery_weight');
-        localStorage.removeItem('nexpak_delivery_fee');
+            const rate = KT_RATES.economy[size];
 
-    }
+            if (!rate) {
 
-
-    // =========================================================================
-    // 13. MAIN DELIVERY CALCULATION
-    // =========================================================================
-
-    function runDeliveryCalculation() {
-
-        let km = NaN;
-
-
-        // -------------------------------------------------------------
-        // OPTION 1 — USER ENTERED KM
-        // -------------------------------------------------------------
-
-        if (
-            distanceInput &&
-            distanceInput.value.trim() !== ''
-        ) {
-
-            km = parseFloat(
-                distanceInput.value
-            );
-
-        }
-
-
-        // -------------------------------------------------------------
-        // OPTION 2 — DETECT DISTANCE FROM ADDRESS
-        // -------------------------------------------------------------
-
-        else if (
-            addressInput &&
-            addressInput.value.trim() !== ''
-        ) {
-
-            const detectedDistance =
-                detectDistanceFromAddress(
-                    addressInput.value
-                );
-
-            if (detectedDistance !== null) {
-
-                km = detectedDistance;
-
-                if (distanceInput) {
-
-                    distanceInput.value =
-                        detectedDistance;
-
-                }
+                return {
+                    success: false,
+                    message: "Please select a valid parcel size."
+                };
 
             }
 
-        }
+            return {
 
+                success: true,
 
-        // -------------------------------------------------------------
-        // VALIDATION
-        // -------------------------------------------------------------
+                method: "economy",
 
-        if (
-            !Number.isFinite(km) ||
-            km < 0
-        ) {
+                methodName: "Economy",
 
-            clearDeliveryData();
+                size: size,
 
-            alert(
-                'Please enter your delivery address or enter the estimated distance in kilometres from Benoni.'
-            );
+                km: 0,
 
-            return false;
+                fee: rate,
+
+                eta: "3–4 business days"
+
+            };
 
         }
 
 
-        // -------------------------------------------------------------
-        // GET ACTUAL CART WEIGHT
-        // -------------------------------------------------------------
+        /* -------------------------------------------------
+           STANDARD
+        ------------------------------------------------- */
 
-        const cartWeight =
-            getCartWeight();
+        if (method === "standard") {
 
+            const rate = KT_RATES.standard[size];
 
-        // -------------------------------------------------------------
-        // CALCULATE DELIVERY
-        // -------------------------------------------------------------
+            if (!rate) {
 
-        const deliveryFee =
-            calculateDeliveryFee(
-                km,
-                cartWeight
-            );
+                return {
+                    success: false,
+                    message: "Please select a valid parcel size."
+                };
 
+            }
 
-        // -------------------------------------------------------------
-        // UPDATE PAGE
-        // -------------------------------------------------------------
+            return {
 
-        updateDeliveryDisplay(
-            deliveryFee,
-            km,
-            cartWeight
-        );
+                success: true,
 
+                method: "standard",
 
-        // -------------------------------------------------------------
-        // SAVE FOR CHECKOUT.JS
-        // -------------------------------------------------------------
+                methodName: "Standard",
 
-        saveDeliveryData(
-            km,
-            cartWeight,
-            deliveryFee
-        );
+                size: size,
+
+                km: 0,
+
+                fee: rate,
+
+                eta: "1–2 business days"
+
+            };
+
+        }
 
 
-        // -------------------------------------------------------------
-        // OPTIONAL GLOBAL ACCESS
-        // -------------------------------------------------------------
-        // This allows checkout.js to read the current delivery fee
-        // without duplicating the calculation.
+        /* -------------------------------------------------
+           EXPRESS
+        ------------------------------------------------- */
 
-        window.NexpakDelivery = {
+        if (method === "express") {
 
-            fee: deliveryFee,
+            if (!km || km <= 0) {
 
-            km: km,
+                return {
 
-            weight: cartWeight,
+                    success: false,
 
-            formattedFee: formatCurrency(
-                deliveryFee
-            )
+                    message:
+                        "Please enter the delivery distance in kilometres for Express delivery."
+
+                };
+
+            }
+
+
+            const fee = km * KT_RATES.express.perKm;
+
+
+            return {
+
+                success: true,
+
+                method: "express",
+
+                methodName: "Express",
+
+                size: "any",
+
+                km: km,
+
+                fee: Number(fee.toFixed(2)),
+
+                eta: "Same day"
+
+            };
+
+        }
+
+
+        return {
+
+            success: false,
+
+            message: "Please select a delivery method."
 
         };
 
-
-        return true;
-
     }
 
 
-    // =========================================================================
-    // 14. BUTTON EVENT
-    // =========================================================================
+    /* =====================================================
+       SAVE DELIVERY
+    ===================================================== */
 
-    if (btnCalculate) {
+    function saveDelivery(result) {
 
-        btnCalculate.addEventListener(
-            'click',
-            runDeliveryCalculation
+        localStorage.setItem(
+            STORAGE.method,
+            result.method
+        );
+
+        localStorage.setItem(
+            STORAGE.size,
+            result.size
+        );
+
+        localStorage.setItem(
+            STORAGE.km,
+            String(result.km || 0)
+        );
+
+        localStorage.setItem(
+            STORAGE.fee,
+            String(result.fee)
+        );
+
+        localStorage.setItem(
+            STORAGE.eta,
+            result.eta
         );
 
     }
 
 
-    // =========================================================================
-    // 15. ADDRESS CHANGE
-    // =========================================================================
+    /* =====================================================
+       UPDATE CHECKOUT DISPLAY
+    ===================================================== */
 
-    if (addressInput) {
+    function updateCheckoutDisplay(result) {
 
-        addressInput.addEventListener(
-            'input',
-            () => {
+        const deliveryAmount = getElement("chkDelivery");
 
-                /*
-                 * Do not automatically charge the customer.
-                 * Clear the previous delivery calculation so
-                 * the customer must recalculate after changing
-                 * their address.
-                 */
+        if (deliveryAmount) {
 
-                clearDeliveryData();
+            deliveryAmount.textContent =
+                money(result.fee);
+
+        }
+
+
+        const deliverySummary =
+            getElement("chkDeliverySummary");
+
+        if (deliverySummary) {
+
+            deliverySummary.textContent =
+                `${result.methodName} • ${money(result.fee)}`;
+
+        }
+
+
+        const deliveryInfo =
+            getElement("deliveryInfo");
+
+        if (deliveryInfo) {
+
+            let text =
+                `${result.methodName} delivery`;
+
+            if (result.method === "economy") {
+
+                text +=
+                    ` • ${capitalize(result.size)} parcel • 3–4 business days`;
+
+            }
+
+            if (result.method === "standard") {
+
+                text +=
+                    ` • ${capitalize(result.size)} parcel • 1–2 business days`;
+
+            }
+
+            if (result.method === "express") {
+
+                text +=
+                    ` • ${result.km.toFixed(1)} km × R4.50/km • Same day`;
+
+            }
+
+            deliveryInfo.textContent = text;
+
+        }
+
+
+        const status =
+            getElement("deliveryStatus");
+
+        if (status) {
+
+            status.textContent =
+                `✓ ${result.methodName} delivery calculated: ${money(result.fee)}`;
+
+            status.classList.add("success");
+
+        }
+
+
+        /* -------------------------------------------------
+           Tell checkout.js to refresh totals
+        ------------------------------------------------- */
+
+        if (
+            window.NexpakCheckout &&
+            typeof window.NexpakCheckout.updateSummary === "function"
+        ) {
+
+            window.NexpakCheckout.updateSummary();
+
+        }
+
+    }
+
+
+    /* =====================================================
+       CAPITALIZE
+    ===================================================== */
+
+    function capitalize(value) {
+
+        if (!value) return "";
+
+        return value.charAt(0).toUpperCase() +
+               value.slice(1);
+
+    }
+
+
+    /* =====================================================
+       CREATE DELIVERY UI IF NEEDED
+    ===================================================== */
+
+    function createDeliveryControls() {
+
+        let container =
+            getElement("deliveryOptions");
+
+
+        /*
+         * If your HTML already has delivery controls,
+         * don't create duplicates.
+         */
+
+        if (
+            getElement("deliveryMethod") ||
+            document.querySelector(
+                'input[name="deliveryMethod"]'
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+         * Find a sensible location.
+         */
+
+        const calculateButton =
+            getElement("btnCalculateDelivery");
+
+
+        if (!calculateButton) {
+
+            console.warn(
+                "[Nexpak Delivery] btnCalculateDelivery not found."
+            );
+
+            return;
+
+        }
+
+
+        container =
+            container ||
+            document.createElement("div");
+
+        if (!container.id) {
+
+            container.id =
+                "deliveryOptions";
+
+        }
+
+
+        container.innerHTML = `
+
+            <div class="nexpak-delivery-selector">
+
+                <h3>
+                    Delivery Method
+                </h3>
+
+                <div class="nexpak-delivery-methods">
+
+                    <label class="nexpak-delivery-option">
+
+                        <input
+                            type="radio"
+                            name="deliveryMethod"
+                            value="economy"
+                        >
+
+                        <span>
+
+                            <strong>
+                                Economy
+                            </strong>
+
+                            <small>
+                                3–4 business days
+                            </small>
+
+                            <em>
+                                From R89
+                            </em>
+
+                        </span>
+
+                    </label>
+
+
+                    <label class="nexpak-delivery-option">
+
+                        <input
+                            type="radio"
+                            name="deliveryMethod"
+                            value="standard"
+                            checked
+                        >
+
+                        <span>
+
+                            <strong>
+                                Standard
+                            </strong>
+
+                            <small>
+                                1–2 business days
+                            </small>
+
+                            <em>
+                                From R129
+                            </em>
+
+                        </span>
+
+                    </label>
+
+
+                    <label class="nexpak-delivery-option">
+
+                        <input
+                            type="radio"
+                            name="deliveryMethod"
+                            value="express"
+                        >
+
+                        <span>
+
+                            <strong>
+                                Express
+                            </strong>
+
+                            <small>
+                                Same-day delivery
+                            </small>
+
+                            <em>
+                                R4.50/km
+                            </em>
+
+                        </span>
+
+                    </label>
+
+                </div>
+
+
+                <div
+                    id="parcelSizeContainer"
+                    class="nexpak-parcel-size"
+                >
+
+                    <label for="parcelSize">
+                        Parcel Size
+                    </label>
+
+                    <select id="parcelSize">
+
+                        <option value="small">
+                            Small — R89 Economy / R129 Standard
+                        </option>
+
+                        <option
+                            value="medium"
+                            selected
+                        >
+                            Medium — R129 Economy / R179 Standard
+                        </option>
+
+                        <option value="large">
+                            Large — R179 Economy / R239 Standard
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+        `;
+
+
+        /*
+         * Insert before the calculate button.
+         */
+
+        calculateButton.parentNode.insertBefore(
+            container,
+            calculateButton
+        );
+
+
+        /*
+         * Method change
+         */
+
+        document
+            .querySelectorAll(
+                'input[name="deliveryMethod"]'
+            )
+            .forEach(function (radio) {
+
+                radio.addEventListener(
+                    "change",
+                    function () {
+
+                        updateSizeVisibility();
+
+                        clearDeliveryResult();
+
+                    }
+                );
+
+            });
+
+
+        const parcelSize =
+            getElement("parcelSize");
+
+
+        if (parcelSize) {
+
+            parcelSize.addEventListener(
+                "change",
+                clearDeliveryResult
+            );
+
+        }
+
+
+        updateSizeVisibility();
+
+    }
+
+
+    /* =====================================================
+       SHOW/HIDE PARCEL SIZE
+    ===================================================== */
+
+    function updateSizeVisibility() {
+
+        const method =
+            getSelectedMethod();
+
+        const container =
+            getElement("parcelSizeContainer");
+
+        if (!container) return;
+
+
+        if (method === "express") {
+
+            container.style.display =
+                "none";
+
+        } else {
+
+            container.style.display =
+                "block";
+
+        }
+
+
+        /*
+         * Express needs distance.
+         */
+
+        const distanceField =
+            getElement("distance-km");
+
+        if (distanceField) {
+
+            if (method === "express") {
+
+                distanceField.disabled = false;
+
+                distanceField.placeholder =
+                    "Enter delivery distance in KM";
+
+            } else {
+
+                distanceField.disabled = true;
+
+                distanceField.placeholder =
+                    "Distance not required for this service";
+
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       CLEAR DELIVERY RESULT
+    ===================================================== */
+
+    function clearDeliveryResult() {
+
+        localStorage.removeItem(
+            STORAGE.fee
+        );
+
+        localStorage.removeItem(
+            STORAGE.eta
+        );
+
+        const amount =
+            getElement("chkDelivery");
+
+        if (amount) {
+
+            amount.textContent =
+                "R0.00";
+
+        }
+
+
+        const summary =
+            getElement("chkDeliverySummary");
+
+        if (summary) {
+
+            summary.textContent =
+                "Select delivery method";
+
+        }
+
+
+        const status =
+            getElement("deliveryStatus");
+
+        if (status) {
+
+            status.textContent =
+                "Select your delivery method and calculate delivery.";
+
+            status.classList.remove("success");
+
+        }
+
+
+        if (
+            window.NexpakCheckout &&
+            typeof window.NexpakCheckout.updateSummary === "function"
+        ) {
+
+            window.NexpakCheckout.updateSummary();
+
+        }
+
+    }
+
+
+    /* =====================================================
+       CALCULATE BUTTON
+    ===================================================== */
+
+    function attachCalculateHandler() {
+
+        const button =
+            getElement("btnCalculateDelivery");
+
+
+        if (!button) {
+
+            console.warn(
+                "[Nexpak Delivery] Calculate button not found."
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * Prevent duplicate listeners.
+         */
+
+        if (
+            button.dataset.nexpakDeliveryBound === "true"
+        ) {
+
+            return;
+
+        }
+
+
+        button.dataset.nexpakDeliveryBound =
+            "true";
+
+
+        button.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+
+                const result =
+                    calculateDelivery();
+
+
+                if (!result.success) {
+
+                    const status =
+                        getElement("deliveryStatus");
+
+                    if (status) {
+
+                        status.textContent =
+                            result.message;
+
+                        status.classList.remove(
+                            "success"
+                        );
+
+                    }
+
+                    alert(
+                        result.message
+                    );
+
+                    return;
+
+                }
+
+
+                saveDelivery(result);
+
+                updateCheckoutDisplay(result);
+
+                console.log(
+                    "[Nexpak Delivery] Calculated:",
+                    result
+                );
 
             }
         );
@@ -548,83 +965,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // =========================================================================
-    // 16. DISTANCE CHANGE
-    // =========================================================================
+    /* =====================================================
+       RESTORE SAVED DELIVERY
+    ===================================================== */
 
-    if (distanceInput) {
+    function restoreDelivery() {
 
-        distanceInput.addEventListener(
-            'input',
-            () => {
-
-                clearDeliveryData();
-
-            }
-        );
-
-    }
-
-
-    // =========================================================================
-    // 17. PUBLIC API
-    // =========================================================================
-
-    window.NexpakDeliveryCalculator = {
-
-        calculate: runDeliveryCalculation,
-
-        getFee: () => {
-
-            return parseFloat(
+        const fee =
+            parseFloat(
                 localStorage.getItem(
-                    'nexpak_delivery_fee'
+                    STORAGE.fee
                 )
-            ) || 0;
-
-        },
-
-        getDistance: () => {
-
-            return parseFloat(
-                localStorage.getItem(
-                    'nexpak_delivery_km'
-                )
-            ) || 0;
-
-        },
-
-        getWeight: () => {
-
-            return parseFloat(
-                localStorage.getItem(
-                    'nexpak_delivery_weight'
-                )
-            ) || 0;
-
-        },
-
-        getPerKmRate: getPerKmRate,
-
-        getCartWeight: getCartWeight,
-
-        formatCurrency: formatCurrency
-
-    };
+            );
 
 
-    // =========================================================================
-    // 18. INITIAL STATE
-    // =========================================================================
-
-    /*
-     * We intentionally do NOT calculate delivery automatically.
-     * The customer must enter/confirm their address and click
-     * "Calculate Delivery".
-     */
-
-    console.log(
-        'Nexpak Delivery Calculator loaded successfully.'
-    );
-
-});
+    
