@@ -638,7 +638,7 @@
                 navSpans[1].textContent = cartCount;
             }
             
-            // Sync navigation counter hook if matching your upper layout structure
+                        // Sync navigation counter hook if matching your upper layout structure
             const navCountAlt = document.getElementById('cart-count-nav');
             if (navCountAlt) navCountAlt.textContent = cartCount;
 
@@ -703,7 +703,7 @@
                 });
             }
 
-                           const btnCart = card.querySelector('.custom-app-btn:not(.btn-info):not(.btn-quote)') || card.querySelector('.btn-add-to-cart');
+            const btnCart = card.querySelector('.custom-app-btn:not(.btn-info):not(.btn-quote)') || card.querySelector('.btn-add-to-cart');
             const btnQuote = card.querySelector('.btn-quote') || card.querySelector('.btn-add-to-quote');
             const productName = titleElement?.textContent || 'Security Item';
 
@@ -740,10 +740,17 @@
                         quantity: 1 
                     });
 
+                    // Save under custom namespace
                     localStorage.setItem('nexpak_cart_count', cartCount);
                     localStorage.setItem('nexpak_cart_total', cartSubtotal);
                     localStorage.setItem('nexpak_cart_weight', totalWeight);
                     localStorage.setItem('nexpak_cart_items', JSON.stringify(cartItems));
+
+                    // Save under standard global keys for payment/checkout page compatibility
+                    localStorage.setItem('cartCount', cartCount);
+                    localStorage.setItem('cartSubtotal', cartSubtotal);
+                    localStorage.setItem('totalWeight', totalWeight);
+                    localStorage.setItem('cartItems', JSON.stringify(cartItems));
 
                     updateCartUI();
                     alert(`${productName}${variantLabel} added to cart!`);
@@ -758,13 +765,20 @@
         });
     });
 
-    // Global Clear Cart Function (Bypasses DOM selection issues)
+    // Global Clear Cart Function
     window.clearCart = function() {
         if (confirm('Are you sure you want to clear your cart?')) {
+            // Clear custom keys
             localStorage.removeItem('nexpak_cart_count');
             localStorage.removeItem('nexpak_cart_total');
             localStorage.removeItem('nexpak_cart_weight');
             localStorage.removeItem('nexpak_cart_items');
+
+            // Clear standard global keys
+            localStorage.removeItem('cartCount');
+            localStorage.removeItem('cartSubtotal');
+            localStorage.removeItem('totalWeight');
+            localStorage.removeItem('cartItems');
 
             window.location.reload();
         }
@@ -778,6 +792,5 @@
 </body>
 </html>
 
-                          
     
     
