@@ -1149,33 +1149,119 @@ function closeCart() {
 }
 
 function proceedToCheckoutModal() {
+
   if (!cart.length) {
     toast("Your cart is empty");
     return;
   }
 
-  // Map equestrian cart items to standard format for checkout.html
+  /*
+   * IMPORTANT:
+   *
+   * Product prices in the Equestrian store are stored
+   * EX VAT.
+   *
+   * The product card displays the VAT-inclusive price,
+   * but checkout must receive the EX-VAT price.
+   *
+   * checkout.js is responsible for calculating VAT once.
+   */
+
   const standardizedItems = cart.map(item => {
-    const p = products.find(y => y.id === item.id);
+
+    const p = products.find(
+      y => y.id === item.id
+    );
+
     return {
-      name: p ? p.name : 'Equestrian Product',
-      price: p ? p.price * (1 + VAT) : 0,
+
+      name: p
+        ? p.name
+        : "Equestrian Product",
+
+      /*
+       * SEND EX-VAT PRICE
+       *
+       * DO NOT use:
+       * p.price * (1 + VAT)
+       */
+
+      price: p
+        ? Number(p.price)
+        : 0,
+
       qty: item.qty,
-      variant: item.variant || ''
+
+      variant:
+        item.variant || ""
+
     };
+
   });
 
-  let total = standardizedItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
-  let totalCount = cart.reduce((acc, item) => acc + item.qty, 0);
 
-  // Save to standard keys used by the main checkout.html page
-  localStorage.setItem('nexpak_cart_items', JSON.stringify(standardizedItems));
-  localStorage.setItem('nexpak_cart_count', totalCount);
-  localStorage.setItem('nexpak_cart_total', total.toFixed(2));
+  /*
+   * Calculate EX-VAT cart subtotal.
+   *
+   * VAT will be calculated by checkout.js.
+   */
 
-  // Redirect to main checkout page
-  window.location.href = '../../checkout.html';
-}
+  const total =
+    standardizedItems.reduce(
+      (acc, item) =>
+        acc + (
+          Number(item.price) *
+          Number(item.qty)
+        ),
+      0
+    );
+
+
+  const totalCount =
+    cart.reduce(
+      (acc, item) =>
+        acc + Number(item.qty),
+      0
+    );
+
+
+  /*
+   * Save standard checkout cart.
+   */
+
+  localStorage.setItem(
+    "nexpak_cart_items",
+    JSON.stringify(
+      standardizedItems
+    )
+  );
+
+
+  localStorage.setItem(
+    "nexpak_cart_count",
+    String(totalCount)
+  );
+
+
+  /*
+   * IMPORTANT:
+   * This total is EX VAT.
+   */
+
+  localStorage.setItem(
+    "nexpak_cart_total",
+    total.toFixed(2)
+  );
+
+
+  /*
+   * Go to main checkout.
+   */
+
+  window.location.href =
+    "../../checkout.html";
+
+      }
 
 function toast(msg) {
   const t = document.getElementById("toast");
