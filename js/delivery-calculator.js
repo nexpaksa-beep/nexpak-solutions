@@ -964,7 +964,6 @@
 
     }
 
-
     /* =====================================================
        RESTORE SAVED DELIVERY
     ===================================================== */
@@ -979,4 +978,264 @@
             );
 
 
-    
+        if (!fee || fee <= 0) {
+            return;
+        }
+
+
+        const method =
+            localStorage.getItem(
+                STORAGE.method
+            ) || "standard";
+
+
+        const size =
+            localStorage.getItem(
+                STORAGE.size
+            ) || "medium";
+
+
+        const km =
+            parseFloat(
+                localStorage.getItem(
+                    STORAGE.km
+                )
+            ) || 0;
+
+
+        const eta =
+            localStorage.getItem(
+                STORAGE.eta
+            ) || "";
+
+
+        const result = {
+
+            success: true,
+
+            method: method,
+
+            methodName:
+                method.charAt(0).toUpperCase() +
+                method.slice(1),
+
+            size: size,
+
+            km: km,
+
+            fee: fee,
+
+            eta: eta
+
+        };
+
+
+        /* -------------------------------------------------
+           RESTORE DELIVERY METHOD
+        ------------------------------------------------- */
+
+        const methodRadio =
+            document.querySelector(
+                `input[name="deliveryMethod"][value="${method}"]`
+            );
+
+
+        if (methodRadio) {
+
+            methodRadio.checked = true;
+
+        }
+
+
+        /* -------------------------------------------------
+           RESTORE PARCEL SIZE
+        ------------------------------------------------- */
+
+        const parcelSize =
+            document.getElementById(
+                "parcelSize"
+            );
+
+
+        if (
+            parcelSize &&
+            size !== "any"
+        ) {
+
+            parcelSize.value = size;
+
+        }
+
+
+        /* -------------------------------------------------
+           UPDATE EXPRESS / SIZE VISIBILITY
+        ------------------------------------------------- */
+
+        updateSizeVisibility();
+
+
+        /* -------------------------------------------------
+           UPDATE CHECKOUT DISPLAY
+        ------------------------------------------------- */
+
+        updateCheckoutDisplay(
+            result
+        );
+
+    }
+
+
+    /* =====================================================
+       PUBLIC NEXPAK DELIVERY API
+    ===================================================== */
+
+    window.NexpakDelivery = {
+
+        rates: KT_RATES,
+
+
+        calculate: calculateDelivery,
+
+
+        getFee: function () {
+
+            return parseFloat(
+                localStorage.getItem(
+                    STORAGE.fee
+                )
+            ) || 0;
+
+        },
+
+
+        getMethod: function () {
+
+            return localStorage.getItem(
+                STORAGE.method
+            ) || "";
+
+        },
+
+
+        getSize: function () {
+
+            return localStorage.getItem(
+                STORAGE.size
+            ) || "";
+
+        },
+
+
+        getKm: function () {
+
+            return parseFloat(
+                localStorage.getItem(
+                    STORAGE.km
+                )
+            ) || 0;
+
+        },
+
+
+        getEta: function () {
+
+            return localStorage.getItem(
+                STORAGE.eta
+            ) || "";
+
+        },
+
+
+        clear: clearDeliveryResult
+
+    };
+
+
+    /* =====================================================
+       BACKWARD COMPATIBILITY
+       Keeps older checkout code working
+    ===================================================== */
+
+    window.NexpakDeliveryCalculator = {
+
+        calculate:
+            calculateDelivery,
+
+        getCart:
+            getCart,
+
+        rates:
+            KT_RATES,
+
+        getFee: function () {
+
+            return parseFloat(
+                localStorage.getItem(
+                    STORAGE.fee
+                )
+            ) || 0;
+
+        }
+
+    };
+
+
+    /* =====================================================
+       INITIALISE DELIVERY CALCULATOR
+    ===================================================== */
+
+    function init() {
+
+        console.log(
+            "[Nexpak Delivery] KT Couriers calculator loading..."
+        );
+
+
+        /* Create delivery controls if needed */
+
+        createDeliveryControls();
+
+
+        /* Attach calculate button */
+
+        attachCalculateHandler();
+
+
+        /* Set initial UI state */
+
+        updateSizeVisibility();
+
+
+        /* Restore previous calculation */
+
+        restoreDelivery();
+
+
+        console.log(
+            "[Nexpak Delivery] ✓ KT Couriers calculator ready."
+        );
+
+    }
+
+
+    /* =====================================================
+       DOM READY
+    ===================================================== */
+
+    if (
+        document.readyState === "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            init
+        );
+
+    } else {
+
+        init();
+
+    }
+
+
+})();
