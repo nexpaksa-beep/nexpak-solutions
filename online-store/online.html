@@ -1413,151 +1413,73 @@ document.addEventListener(
                     return;
                 }
 
+/* ----------------------------------------------
+   CREATE CHECKOUT DATA
+---------------------------------------------- */
 
-                /* ----------------------------------------------
-                   CALCULATE DELIVERY
-                ---------------------------------------------- */
+const checkoutData = {
 
-                let deliveryFee = 0;
+    cartCount:
+        count,
 
+    cartItems:
+        items,
 
-                if (subtotal >= 10000) {
+    subtotal:
+        Number(
+            subtotal.toFixed(2)
+        ),
 
-                    deliveryFee = 0;
+    weight:
+        Number(
+            weight.toFixed(2)
+        ),
 
-                } else if (weight <= 5) {
+    /* KT COURIERS DELIVERY */
+    deliveryFee:
+        Number(
+            localStorage.getItem(
+                'nexpak_delivery_fee'
+            ) || '0'
+        ),
 
-                    deliveryFee = 80;
+    currency:
+        'ZAR',
 
-                } else {
-
-                    deliveryFee =
-                        80 +
-                        ((weight - 5) * 7);
-                }
-
-
-                /* ----------------------------------------------
-                   CALCULATE GRAND TOTAL
-                ---------------------------------------------- */
-
-                const grandTotal =
-                    subtotal + deliveryFee;
-
-
-                /* ----------------------------------------------
-                   CREATE CHECKOUT DATA
-                ---------------------------------------------- */
-
-                const checkoutData = {
-
-                    cartCount:
-                        count,
-
-                    cartItems:
-                        items,
-
-                    subtotal:
-                        Number(
-                            subtotal.toFixed(2)
-                        ),
-
-                    weight:
-                        Number(
-                            weight.toFixed(2)
-                        ),
-
-                    deliveryFee:
-                        Number(
-                            deliveryFee.toFixed(2)
-                        ),
-
-                    grandTotal:
-                        Number(
-                            grandTotal.toFixed(2)
-                        ),
-
-                    currency:
-                        'ZAR',
-
-                    createdAt:
-                        new Date().toISOString()
-                };
+    createdAt:
+        new Date().toISOString()
+};
 
 
-                /* ----------------------------------------------
-                   SAVE CHECKOUT DATA
-                ---------------------------------------------- */
+/* ----------------------------------------------
+   SAVE CHECKOUT DATA
+---------------------------------------------- */
 
-                localStorage.setItem(
-                    'nexpak_checkout_data',
-                    JSON.stringify(
-                        checkoutData
-                    )
-                );
-
-
-                /* ----------------------------------------------
-                   SAVE PAYMENT COMPATIBILITY VALUES
-                ---------------------------------------------- */
-
-                localStorage.setItem(
-                    'deliveryFee',
-                    deliveryFee.toFixed(2)
-                );
-
-                localStorage.setItem(
-                    'grandTotal',
-                    grandTotal.toFixed(2)
-                );
+localStorage.setItem(
+    'nexpak_checkout_data',
+    JSON.stringify(
+        checkoutData
+    )
+);
 
 
-                /* ----------------------------------------------
-                   DEBUG INFORMATION
-                ---------------------------------------------- */
+/* ----------------------------------------------
+   GO TO CHECKOUT
+---------------------------------------------- */
 
-                console.log(
-                    '===================================='
-                );
-
-                console.log(
-                    'NEXPAK CHECKOUT DATA'
-                );
-
-                console.log(
-                    checkoutData
-                );
-
-                console.log(
-                    'Subtotal:',
-                    subtotal
-                );
-
-                console.log(
-                    'Delivery:',
-                    deliveryFee
-                );
-
-                console.log(
-                    'Grand Total:',
-                    grandTotal
-                );
-
-                console.log(
-                    '===================================='
-                );
+console.log(
+    'NEXPAK CHECKOUT DATA:',
+    checkoutData
+);
 
 
-                /* ----------------------------------------------
-                   GO TO CHECKOUT PAGE
-                ---------------------------------------------- */
+window.location.href =
+    '../checkout.html';
+                
 
-                window.location.href =
-                    '../checkout.html';
-            }
-        );
+                
 
-    });
+                
 </script>
 
 <!-- ==========================================================
@@ -1588,23 +1510,4 @@ document.addEventListener(
 </body>
 </html>
 
-<!-- ==========================================================
-     CHATBOT
-========================================================== -->
 
-<script src="../../js/chatbot-knowledge.js"></script>
-
-<script src="../../js/chatbot.js"></script>
-
-
-<!-- ==========================================================
-     SEO + SCHEMA
-========================================================== -->
-
-<script src="../../seo-schema.js"></script>
-
-<script src="../seo-schema-injector.js"></script>
-
-
-</body>
-</html>
