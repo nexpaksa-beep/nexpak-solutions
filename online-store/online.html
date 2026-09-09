@@ -1571,7 +1571,36 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="../seo-schema.js"></script>
 <script src="../seo-schema-injector.js"></script>
 
+<script>
+function toggleNexpakMenu(event) {
 
+    event.preventDefault();
+    event.stopPropagation();
+
+    const dropdown =
+        document.querySelector('.dropdown');
+
+    if (dropdown) {
+        dropdown.classList.toggle('active');
+    }
+}
+
+
+/* Close menu when clicking outside */
+
+document.addEventListener('click', function(event) {
+
+    const dropdown =
+        document.querySelector('.dropdown');
+
+    if (!dropdown) return;
+
+    if (!dropdown.contains(event.target)) {
+        dropdown.classList.remove('active');
+    }
+
+});
+</script>
 </body>
 </html>
 
