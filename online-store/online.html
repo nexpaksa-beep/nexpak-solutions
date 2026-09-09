@@ -702,7 +702,7 @@
                 });
             }
 
-            const btnCart = card.querySelector('.custom-app-btn:not(.btn-info):not(.btn-quote)') || card.querySelector('.btn-add-to-cart');
+                        const btnCart = card.querySelector('.custom-app-btn:not(.btn-info):not(.btn-quote)') || card.querySelector('.btn-add-to-cart');
             const btnQuote = card.querySelector('.btn-quote') || card.querySelector('.btn-add-to-quote');
             const productName = titleElement?.textContent || 'Security Item';
 
@@ -720,9 +720,14 @@
                         itemWeight = parseFloat(selectedOption.getAttribute('data-weight')) || 2.0;
                         variantLabel = ' (' + selectedOption.textContent.split(' - ')[0] + ')';
                     } else {
-                        // FIXED FALLBACKS: Standardizes matching both attribute styles gracefully
-                        numericPrice = parseFloat(card.getAttribute('data-price')) || parseFloat(card.getAttribute('data-single-price')) || 0;
-                        itemWeight = parseFloat(card.getAttribute('data-weight')) || parseFloat(card.getAttribute('data-single-weight')) || 2.0;
+                        // FIX: Reads price directly from the visual screen tag (e.g. "R5,999.00" -> 5999.00)
+                        if (priceTag) {
+                            const cleanPrice = priceTag.textContent.replace(/,/g, '').replace(/[^0-9.]/g, '');
+                            numericPrice = parseFloat(cleanPrice) || 0;
+                        } else {
+                            numericPrice = parseFloat(card.getAttribute('data-single-price')) || 0;
+                        }
+                        itemWeight = parseFloat(card.getAttribute('data-single-weight')) || 0.5;
                     }
 
                     cartSubtotal += numericPrice;
@@ -763,14 +768,7 @@
                     localStorage.removeItem('nexpak_cart_total');
                     localStorage.removeItem('nexpak_cart_weight');
                     localStorage.removeItem('nexpak_cart_items');
-
-                    cartCount = 0;
-                    cartSubtotal = 0;
-                    totalWeight = 0;
-                    cartItems = [];
-
-                    updateCartUI();
-                    alert('Your cart has been cleared.');
+        
                 }
             });
         }
