@@ -759,20 +759,38 @@
             }
         });
 
-        // Clear Cart Functionality
-        const clearCartBtn = document.getElementById('clear-cart-btn') || document.getElementById('btnClearCart');
+        // Clear Cart Functionality (Updated with multiple element matches)
+        const clearCartBtn = document.getElementById('clear-cart-btn') || 
+                             document.getElementById('btnClearCart') || 
+                             document.getElementById('clear-cart') || 
+                             document.querySelector('.btn-clear-cart') || 
+                             document.querySelector('.clear-cart-btn');
+
         if (clearCartBtn) {
-            clearCartBtn.addEventListener('click', () => {
+            clearCartBtn.addEventListener('click', (e) => {
+                e.preventDefault(); // Prevents link jumps or page reloads
+
                 if (confirm('Are you sure you want to clear your cart?')) {
+                    // Clear storage
                     localStorage.removeItem('nexpak_cart_count');
                     localStorage.removeItem('nexpak_cart_total');
                     localStorage.removeItem('nexpak_cart_weight');
                     localStorage.removeItem('nexpak_cart_items');
-        
+
+                    // Reset variables
+                    cartCount = 0;
+                    cartSubtotal = 0;
+                    totalWeight = 0;
+                    cartItems = [];
+
+                    // Refresh UI displays
+                    updateCartUI();
+                    alert('Your cart has been cleared.');
                 }
             });
         }
     });
+    
             </script>
     <script src="seo-schema-injector.js"></script>
     <script src="seo-schema.js"></script>
