@@ -702,7 +702,7 @@
                 });
             }
 
-                        const btnCart = card.querySelector('.custom-app-btn:not(.btn-info):not(.btn-quote)') || card.querySelector('.btn-add-to-cart');
+                           const btnCart = card.querySelector('.custom-app-btn:not(.btn-info):not(.btn-quote)') || card.querySelector('.btn-add-to-cart');
             const btnQuote = card.querySelector('.btn-quote') || card.querySelector('.btn-add-to-quote');
             const productName = titleElement?.textContent || 'Security Item';
 
@@ -720,7 +720,6 @@
                         itemWeight = parseFloat(selectedOption.getAttribute('data-weight')) || 2.0;
                         variantLabel = ' (' + selectedOption.textContent.split(' - ')[0] + ')';
                     } else {
-                        // FIX: Reads price directly from the visual screen tag (e.g. "R5,999.00" -> 5999.00)
                         if (priceTag) {
                             const cleanPrice = priceTag.textContent.replace(/,/g, '').replace(/[^0-9.]/g, '');
                             numericPrice = parseFloat(cleanPrice) || 0;
@@ -750,67 +749,34 @@
                 });
             }
 
-            // btnInfo listener removed entirely so anchor tags navigate naturally!
-
             if (btnQuote) {
                 btnQuote.addEventListener('click', () => {
                     alert(`${productName} has been added to your quotation request list.`);
                 });
             }
         });
-
-        // Clear Cart Functionality (Updated with multiple element matches)
-        const clearCartBtn = document.getElementById('clear-cart-btn') || 
-                             document.getElementById('btnClearCart') || 
-                             document.getElementById('clear-cart') || 
-                             document.querySelector('.btn-clear-cart') || 
-                             document.querySelector('.clear-cart-btn');
-
-        if (clearCartBtn) {
-            clearCartBtn.addEventListener('click', (e) => {
-                e.preventDefault(); // Prevents link jumps or page reloads
-
-                if (confirm('Are you sure you want to clear your cart?')) {
-                    // Clear storage
-                    localStorage.removeItem('nexpak_cart_count');
-                    localStorage.removeItem('nexpak_cart_total');
-                    localStorage.removeItem('nexpak_cart_weight');
-                    localStorage.removeItem('nexpak_cart_items');
-
-                    // Reset variables
-                    cartCount = 0;
-                    cartSubtotal = 0;
-                    totalWeight = 0;
-                    cartItems = [];
-
-                    // Refresh UI displays
-                    updateCartUI();
-                    alert('Your cart has been cleared.');
-                }
-            });
-        }
     });
 
-        // Global Clear Cart Function (Bypasses DOM selection issues)
-window.clearCart = function() {
-    if (confirm('Are you sure you want to clear your cart?')) {
-        // Completely wipes stored cart memory
-        localStorage.removeItem('nexpak_cart_count');
-        localStorage.removeItem('nexpak_cart_total');
-        localStorage.removeItem('nexpak_cart_weight');
-        localStorage.removeItem('nexpak_cart_items');
+    // Global Clear Cart Function (Bypasses DOM selection issues)
+    window.clearCart = function() {
+        if (confirm('Are you sure you want to clear your cart?')) {
+            localStorage.removeItem('nexpak_cart_count');
+            localStorage.removeItem('nexpak_cart_total');
+            localStorage.removeItem('nexpak_cart_weight');
+            localStorage.removeItem('nexpak_cart_items');
 
-        // Reloads the page to instantly reset all UI counters and totals to 0
-        window.location.reload();
-    }
-};
-        
-            </script>
+            window.location.reload();
+        }
+    };
+    </script>
+
     <script src="seo-schema-injector.js"></script>
     <script src="seo-schema.js"></script>
-  
-    
     <script src="../../js/chatbot-knowledge.js"></script>
     <script src="../../js/chatbot.js"></script>
 </body>
 </html>
+
+                          
+    
+    
