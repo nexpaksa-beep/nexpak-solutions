@@ -253,6 +253,12 @@
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     </url>
+
+    <url>
+    <loc>https://www.nexpaksolutions.co.za/security-guides/cctv-cloud-vs-local-storage.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    </url>
     
     <!-- Security Product Pages -->
     <url>
