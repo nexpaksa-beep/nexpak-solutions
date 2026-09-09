@@ -57,15 +57,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =========================================================================
-    // 2. RETRIEVE CART DATA & COMPUTE WEIGHT
+    // 2. RETRIEVE CART DATA & COMPUTE WEIGHT (WITH FALLBACK KEYS)
     // =========================================================================
-    const cartTotal = parseFloat(localStorage.getItem('nexpak_cart_total')) || 0;
-    const cartItems = JSON.parse(localStorage.getItem('nexpak_cart_items')) || [];
+    const cartTotal = parseFloat(localStorage.getItem('nexpak_cart_total') || localStorage.getItem('cartSubtotal') || localStorage.getItem('cartTotal')) || 0;
+    const cartItems = JSON.parse(localStorage.getItem('nexpak_cart_items') || localStorage.getItem('cartItems')) || [];
 
     function calculateTotalCartWeight() {
         let totalWeight = 0;
         cartItems.forEach(item => {
-            let itemWeight = typeof item.weight === 'string' ? parseFloat(item.weight) : item.weight;
+            let itemWeight = item.weight;
+            if (typeof itemWeight === 'string') {
+                itemWeight = parseFloat(itemWeight.replace(/[^0-9.]/g, ''));
+            }
             if (!itemWeight || isNaN(itemWeight) || itemWeight <= 0) itemWeight = 0.5;
             const quantity = parseInt(item.quantity) || 1;
             totalWeight += (itemWeight * quantity);
@@ -86,7 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateFinancialSummary() {
         const subtotal = cartTotal;
-        const vat = subtotal * 0.15; // 15% Standard SA VAT
+        // Display prices already include VAT; set to 0.00 unless explicitly adding tax on top
+        const vat = 0.00; 
         const grandTotal = subtotal + vat + activeDeliveryFee;
 
         if (subtotalEl) subtotalEl.textContent = 'R ' + subtotal.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -222,16 +226,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const waMessage = encodeURIComponent(`Hi NexPak, I have placed order ${generatedOrderRef} for ${grandTotalText}. Here is my Proof of Payment:`);
             window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${waMessage}`, '_blank');
 
-            // Clear local storage cart items
+            // Clear local storage cart items across all namespaces
             localStorage.removeItem('nexpak_cart_count');
             localStorage.removeItem('nexpak_cart_total');
             localStorage.removeItem('nexpak_cart_subtotal');
             localStorage.removeItem('nexpak_cart_items');
             localStorage.removeItem('nexpak_cart_weight');
 
+            localStorage.removeItem('cartCount');
+            localStorage.removeItem('cartSubtotal');
+            localStorage.removeItem('cartTotal');
+            localStorage.removeItem('cartItems');
+            localStorage.removeItem('totalWeight');
+
             // Redirect back to home or success page
-            window.location.href = '/index.html';
+            window.location.href = 'index.html';
         });
     }
 });
-
+                                                                                                   
