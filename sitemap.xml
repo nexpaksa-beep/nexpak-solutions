@@ -391,6 +391,12 @@
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     </url>
+
+    <url>
+    <loc>https://www.nexpaksolutions.co.za/security-guides/gate-motor-smartphone-control.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    </url>
     
     <!-- Security Product Pages -->
     <url>
